@@ -1,9 +1,9 @@
 
 Definitions.
 
+I = (_|[a-zA-Z])(_|[a-zA-Z]|[0-9])
 
 Rules.
-
 
 &&     : {token, {'andand', TokenLine}}.
 char   : {token, {'char', TokenLine}}.
@@ -20,25 +20,26 @@ int    : {token, {'int', TokenLine}}.
 [0-9]+ : {token, {'int_constant', TokenLine, list_to_integer(TokenChars)}}.
 {      : {token, {'lbrace', TokenLine}}.
 }      : {token, {'rbrace', TokenLine}}.
-[      : {token, {'lbrack', TokenLine}}.
-]      : {token, {'rbrack', TokenLine}}.
-(      : {token, {'lparen', TokenLine}}.
-)      : {token, {'rparen', TokenLine}}.
+\[     : {token, {'lbrack', TokenLine}}.
+\]     : {token, {'rbrack', TokenLine}}.
+\(     : {token, {'lparen', TokenLine}}.
+\)     : {token, {'rparen', TokenLine}}.
 <      : {token, {'lt', TokenLine}}.
 <==    : {token, {'lteq', TokenLine}}.
 -      : {token, {'minus', TokenLine}}.
-*      : {token, {'mul', TokenLine}}.
+\*     : {token, {'mul', TokenLine}}.
 !      : {token, {'not', TokenLine}}.
 !=     : {token, {'noteq', TokenLine}}.
 ||     : {token, {'oror', TokenLine}}.
-+      : {token, {'plus', TokenLine}}.
+\+     : {token, {'plus', TokenLine}}.
 return : {token, {'return', TokenLine}}.
 ;      : {token, {'semi', TokenLine}}.
 while  : {token, {'while', TokenLine}}.
-(_|[a-zA-Z])(_|[a-zA-Z]|[0-9])* : {token, {'ident', TokenLine, list_to_atom(TokenChars)}}.\n     : skip_token.
+{I}+   : {token, {'ident', TokenLine, list_to_atom(TokenChars)}}.
+\n     : skip_token.
 //.*\n : skip_token.
 \s     : skip_token.
-.      : {error, unknown_symbol}.
+.      : {error, unknown_symbol, list_to_atom(TokenChars)}.
 
 Erlang code.
 
