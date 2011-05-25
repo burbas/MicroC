@@ -63,23 +63,18 @@ binary_operator ->
 binary_operator ->
     'eqeq' : '$1'.
 
-%% See if we can match for the empty case
-argument_expression_list_opt ->
-    '$empty' : nil.
-argument_expression_list_opt ->
-    argument_expression_list : '$1'.
-
 assignment_expression ->
-    identifier 'eq' expression : ass_exp('$1', '$2').
+    expression : '$1'.
+assignment_expression ->
+    'ident' 'eq' expression : ass_exp('$1', '$2').
+
 
 argument_expression_list ->
     assignment_expression : '$1'.
 argument_expression_list ->
-    expression : '$1'.
+    argument_expression_list assignment_expression : ['$1', '$2'].
 argument_expression_list ->
-    argument_expression_list assignment_expression : '$1','$2'.
-argument_expression_list ->
-    argument_expression_list 'comma' expression : '$1','$3'.
+    argument_expression_list 'comma' assignment_expression : ['$1', '$3'].
 
 
 statement ->				 
