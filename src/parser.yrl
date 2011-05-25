@@ -1,4 +1,4 @@
-Nonterminals  identifier expression binary_operator argument_expression_list_opt assignment_expression argument_expression_list statement simple_compound_statement compound_statement statement_list declaration declaration_list_opt declaration_list base_type declarator program toplevel_declaration_list toplevel_declaration function_parameters formals_list formal.
+Nonterminals  expression binary_operator assignment_expression argument_expression_list statement simple_compound_statement compound_statement statement_list declaration declaration_list_opt declaration_list base_type declarator program toplevel_declaration_list toplevel_declaration function_parameters formals_list formal expression_list.
 
 Terminals 'andand' 'char' 'comma' 'div' 'else' 'eq' 'eqeq' 'gteq' 'gt' 'void' 'if' 'int' 'int_constant' 'lbrace' 'rbrace' 'lbrack' 'rbrack' 'lparen' 'rparen' 'lt' 'lteq' 'minus' 'mul' 'not' 'noteq' 'oror' 'plus' 'return' 'semi' 'while' 'ident'.
 
@@ -21,7 +21,7 @@ identifier ->
 expression ->
     identifier : '$1'.
 expression -> 
-    'int_constant' : #'INT_CONSTANT'{value = get_value('$1'), line = line('$1')}.
+    'int_constant' : '$1'.
 expression ->
     'lparen' expression 'rparen' : '$2'.
 expression ->
@@ -31,7 +31,7 @@ expression ->
 expression ->
     expression binary_operator expression : binary_op('$1', '$2','$3').
 expression ->
-    expression 'minus' expression : binary_op('$2', '$1', '3').
+    expression 'minus' expression : binary_op('$2', '$1', '$3').
 expression ->
     expression 'mul' expression : binary_op('$2', '$1', '$3').
 expression ->
@@ -67,19 +67,19 @@ binary_operator ->
 argument_expression_list_opt ->
     '$empty' : nil.
 argument_expression_list_opt ->
-    argument_expression_list : ['$1'].
+    argument_expression_list : '$1'.
 
 assignment_expression ->
     identifier 'eq' expression : ass_exp('$1', '$2').
-assignment_expression ->
-    expression  : '$1'.
 
 argument_expression_list ->
-    assignment_expression : ['$1'].
+    assignment_expression : '$1'.
 argument_expression_list ->
-    argument_expression_list assignment_expression : '$1' ++ ['$2'].
+    expression : '$1'.
 argument_expression_list ->
-    argument_expression_list 'comma' expression : '$1' ++ ['$3'].
+    argument_expression_list assignment_expression : '$1','$2'.
+argument_expression_list ->
+    argument_expression_list 'comma' expression : '$1','$3'.
 
 
 statement ->				 
@@ -136,7 +136,7 @@ base_type ->
     'void' : '$1'.
 
 declarator ->
-    identifier : vardec('$1', none).
+    identifier : '$1'.
 declarator ->
     identifier 'lbrack' 'int_constant' 'rbrack' : arrdec('$1', '$3').
 
@@ -145,9 +145,9 @@ program ->
     toplevel_declaration_list : program('$1', dummy).
 
 toplevel_declaration_list ->    
-    toplevel_declaration : '$1'.
+    toplevel_declaration : ['$1'].
 toplevel_declaration_list ->
-    toplevel_declaration_list toplevel_declaration : ['$1', '$2'].
+    toplevel_declaration_list toplevel_declaration : '$1'++['$2'].
 
 toplevel_declaration ->
     base_type identifier function_parameters compound_statement : function('$2', '$3', '$1', '$4').
@@ -170,8 +170,7 @@ formals_list ->
 
 formal ->
     base_type declarator : vardec('$1', '$2').
-			     
-    
+
 
 Erlang code.
 
@@ -290,6 +289,7 @@ assign(Expr1, Expr2) ->
        }.
 
 binary_op(BinOp, Expr1, Expr2) ->
+    io:format("~p: ~p - ~p~n", [BinOp, Expr1, Expr2]),
     #'EXPRESSION'{
 	   value = #'BINARY_OP'{
 	     operation = BinOp,
