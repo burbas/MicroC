@@ -15,23 +15,22 @@ Left  700 'mul' 'div'.
 Nonassoc 800 'not'.
 Nonassoc 900 'ident'.
 
-identifier ->
-    'ident' : '$1'.
-
 expression ->
-    identifier : '$1'.
+    'ident' : '$1'.
 expression -> 
     'int_constant' : '$1'.
 expression ->
     'lparen' expression 'rparen' : '$2'.
 expression ->
-    identifier 'lbrack' expression 'rbrack' : array('$1', '$3').
+    'ident' 'lbrack' expression 'rbrack' : array('$1', '$3').
 expression ->
-    identifier 'lparen' argument_expression_list_opt 'rparen' : function_call('$1', '$3').
+    'ident' 'lparen' 'rparen' : function_call('$1', nil).
+expression ->
+    'ident' 'lparen' expression_list 'rparen' : function_call('$1', '$3').
 expression ->
     expression binary_operator expression : binary_op('$1', '$2','$3').
 expression ->
-    expression 'minus' expression : binary_op('$2', '$1', '$3').
+    expression 'minus' expression : binary_op('$2', '$1', '3').
 expression ->
     expression 'mul' expression : binary_op('$2', '$1', '$3').
 expression ->
@@ -49,7 +48,12 @@ expression ->
 expression ->
     expression 'oror' expression : binary_op('oror', '$1', '$3').
 
+expression_list ->
+    expression : '$1'.
+expression_list ->
+    expression_list 'comma' expression : '$1', '$2'.
 
+ 
 binary_operator ->
     'lt' : '$1'.
 binary_operator ->
@@ -98,9 +102,10 @@ simple_compound_statement ->
     'lbrace' statement_list 'rbrace' : '$2'.
 
 compound_statement ->
-    'lbrace' declaration_list_opt statement_list 'rbrace' : ['$2','$3'].
+    'lbrace' statement_list 'rbrace' : '$2'.
+compound_statement ->
+    'lbrace' declaration_list statement_list 'rbrace' : '$2'++['$3'].
 
-%%% MATCH AGAINST EMPTY
 statement_list ->
     '$empty' : nil.
 statement_list ->
@@ -112,16 +117,10 @@ statement_list ->
 declaration ->
     base_type declarator 'semi' : vardec('$1', '$2').
 
-declaration_list_opt ->
-    '$empty': nil.
-declaration_list_opt ->
-    declaration_list : ['$1'].
-
 declaration_list ->
-    declaration : '$1'.
-
+    declaration : ['$1'].
 declaration_list ->
-    declaration_list declaration : ['$1', '$2'].
+    declaration_list declaration : '$1' ++ ['$2'].
 
 base_type ->
     'char' : '$1'.
@@ -131,9 +130,9 @@ base_type ->
     'void' : '$1'.
 
 declarator ->
-    identifier : '$1'.
+    'ident' : '$1'.
 declarator ->
-    identifier 'lbrack' 'int_constant' 'rbrack' : arrdec('$1', '$3').
+    'ident' 'lbrack' 'int_constant' 'rbrack' : arrdec('$1', '$3').
 
 
 program ->
@@ -145,9 +144,9 @@ toplevel_declaration_list ->
     toplevel_declaration_list toplevel_declaration : '$1'++['$2'].
 
 toplevel_declaration ->
-    base_type identifier function_parameters compound_statement : function('$2', '$3', '$1', '$4').
+    base_type 'ident' function_parameters compound_statement : function('$2', '$3', '$1', '$4').
 toplevel_declaration ->
-    base_type identifier function_parameters 'semi' : ext_function('$2', '$3', '$1').
+    base_type 'ident' function_parameters 'semi' : ext_function('$2', '$3', '$1').
 toplevel_declaration ->
     declaration : global('$1').
 
@@ -156,16 +155,16 @@ function_parameters ->
 function_parameters ->
     'lparen' 'rparen' : nil.
 function_parameters ->
-    'lparen' formals_list 'rparen' : [formals_list].
+    'lparen' formals_list 'rparen' : '$2'.
 
 formals_list ->
-    formal : '$1'.
+    formal : ['$1'].
 formals_list ->
-    formals_list 'comma' formal : ['$1', '$3'].
+    formals_list 'comma' formal : '$1'++['$3'].
 
 formal ->
-    base_type declarator : vardec('$1', '$2').
-
+    base_type declarator : vardec('$1', '$2').	     
+    
 
 Erlang code.
 
@@ -181,20 +180,15 @@ line({_, Line, _, _}) ->
 line(_) ->
     0.
 
-get_value({_,_,P}) ->
-    P;
-get_value({_,_,_,P}) ->
-    P.
-
-ass_exp(Identifier, Expression) ->
-    #'EXPRESSION'{
-	 value = #'ASSIGN'{
-	   expr1 = #'EXPRESSION'{
-	     value = {'VAR', Identifier}
-	    },
-	   expr2 = Expression
-	  }
-	}.
+%ass_exp(Identifier, Expression) ->
+%    #'EXPRESSION'{
+%	 value = #'ASSIGN'{
+%	   expr1 = #'EXPRESSION'{
+%	     value = {'VAR', Identifier}
+%	    },
+%	   expr2 = Expression
+%	  }
+%	}.
 
 global(Declaration) ->
     #'GLOBAL'{
@@ -208,12 +202,11 @@ ext_function(Name, Formals, ReturnType) ->
 	      return_type = ReturnType
 	     }.
 
-function(Name, Formals, ReturnType, [Locals|Body]) ->
+function(Name, Formals, ReturnType, Body) ->
     #'FUNCTION'{
 	  name = Name,
 	  formals = Formals,
 	  return_type = ReturnType,
-	  locals = Locals, 
 	  body = Body
 	 }.
 	  
@@ -284,7 +277,6 @@ assign(Expr1, Expr2) ->
        }.
 
 binary_op(BinOp, Expr1, Expr2) ->
-    io:format("~p: ~p - ~p~n", [BinOp, Expr1, Expr2]),
     #'EXPRESSION'{
 	   value = #'BINARY_OP'{
 	     operation = BinOp,
@@ -294,7 +286,7 @@ binary_op(BinOp, Expr1, Expr2) ->
 	   line = line(BinOp)
 	  }.
 
-function_call({IdentLine, _IdentLength, IdentValue}, FunctionList) ->
+function_call({ident, IdentLine, _IdentLength, IdentValue}, FunctionList) ->
     #'EXPRESSION'{
 	       value = #'FUNCTION_CALL'{
 		 identifier = IdentValue,
