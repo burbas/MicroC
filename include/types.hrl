@@ -68,7 +68,8 @@
 	 }).
 
 -record('ARRDEC', {
-	  identifier, 
+	  identifier,
+	  base_type,
 	  size
 	 }).
 
@@ -96,3 +97,7 @@
 	  declaration
 	 }).
 	  
+
+-record('ARGUMENT', {
+	  args
+	 }).
