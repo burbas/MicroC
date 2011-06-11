@@ -13,6 +13,8 @@
 %% API
 -export([
 	 start_link/0,
+	 lex/1,
+	 parse/1,
 	 compile/1
 	]).
 
@@ -37,6 +39,14 @@
 %%--------------------------------------------------------------------
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+
+lex(Filename) ->
+    gen_server:call(?SERVER, {lex, Filename}).
+
+parse(Filename) ->
+    {_, Tokens, _} = gen_server:call(?SERVER, {lex, Filename}),
+    gen_server:call(?SERVER, {parse, Tokens}).
 
 compile(Filename) ->
     gen_server:call(?SERVER, {compile, Filename}).
@@ -73,12 +83,34 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+handle_call({lex, Filename}, _From, State) ->
+    case file:read_file(Filename) of
+	{ok, Binary} ->
+	    ContentList = erlang:binary_to_list(Binary),
+	    Return = tokenize(ContentList),
+	    {reply, Return, State};
+	Error ->
+	    {reply, Error, State}
+    end;
+
+handle_call({parse, Tokens}, _From, State) ->
+    {ok, AST} = parser:parse(Tokens),
+    {reply, AST, State};
+
 handle_call({compile, Filename}, _From, State) ->
     case file:read_file(Filename) of
 	{ok, Binary} ->
 	    ContentList = erlang:binary_to_list(Binary),
-	    Tokenized = tokenize(ContentList),
-	    {reply, Tokenized, State};
+	    
+%	    try 
+		{_, Tokens, _} = tokenize(ContentList),
+		{ok, AST} = parser:parse(Tokens),
+		_Semantic = absyn:analyze(AST),
+		{reply, AST, State};
+%	    catch
+%		P:Reason -> io:format("~p: ~p~n", [P, Reason]),
+%			       {reply, ok, State}
+%	    end;
 	Error ->
 	    {reply, Error, State}
     end;
