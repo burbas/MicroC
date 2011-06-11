@@ -20,12 +20,12 @@ void           : {token, {'void', TokenLine}}.
 if             : {token, {'if', TokenLine}}.
 int            : {token, {'int', TokenLine}}.
 [0-9]+         : {token, {'int_constant', TokenLine, list_to_integer(TokenChars)}}.
-\{             : {token, {'lbrace', TokenLine}}.
-\}             : {token, {'rbrace', TokenLine}}.
-\[             : {token, {'lbrack', TokenLine}}.
-\]             : {token, {'rbrack', TokenLine}}.
-\(             : {token, {'lparen', TokenLine}}.
-\)             : {token, {'rparen', TokenLine}}.
+\{             : {token, {'{', TokenLine}}.
+\}             : {token, {'}', TokenLine}}.
+\[             : {token, {'[', TokenLine}}.
+\]             : {token, {']', TokenLine}}.
+\(             : {token, {'(', TokenLine}}.
+\)             : {token, {')', TokenLine}}.
 <              : {token, {'lt', TokenLine}}.
 <=             : {token, {'lteq', TokenLine}}.
 \-             : {token, {'minus', TokenLine}}.
@@ -39,6 +39,7 @@ return         : {token, {'return', TokenLine}}.
 while          : {token, {'while', TokenLine}}.
 {Comment}      : skip_token.
 {Identifier}   : {token, {'ident', TokenLine, TokenLen, list_to_atom(TokenChars)}}.
+\'[a-zA-Z]\'   : {token, {'char_constant', TokenLine, strip(TokenChars, TokenLen)}}.
 {HiddenChars}+ : skip_token.
 .              : {error, unknown_symbol}.
 
