@@ -1,6 +1,6 @@
 Nonterminals  expression binary_operator assignment_expression argument_expression_list statement simple_compound_statement compound_statement statement_list declaration declaration_list_opt declaration_list base_type declarator program toplevel_declaration_list toplevel_declaration function_parameters formals_list formal expression_list.
 
-Terminals 'andand' 'char' 'comma' 'div' 'else' 'eq' 'eqeq' 'gteq' 'gt' 'void' 'if' 'int' 'int_constant' 'lbrace' 'rbrace' 'lbrack' 'rbrack' 'lparen' 'rparen' 'lt' 'lteq' 'minus' 'mul' 'not' 'noteq' 'oror' 'plus' 'return' 'semi' 'while' 'ident'.
+Terminals 'andand' 'char' 'char_constant' 'comma' 'div' 'else' 'eq' 'eqeq' 'gteq' 'gt' 'void' 'if' 'int' 'int_constant' '{' '}' '[' ']' '(' ')' 'lt' 'lteq' 'minus' 'mul' 'not' 'noteq' 'oror' 'plus' 'return' 'semi' 'while' 'ident'.
 
 Rootsymbol program.
 
@@ -20,13 +20,17 @@ expression ->
 expression -> 
     'int_constant' : '$1'.
 expression ->
-    'lparen' expression 'rparen' : '$2'.
+    'char_constant' : '$1'.
 expression ->
-    'ident' 'lbrack' expression 'rbrack' : array('$1', '$3').
+    '(' expression ')' : '$2'.
 expression ->
-    'ident' 'lparen' 'rparen' : function_call('$1', nil).
+    base_type 'ident' '[' expression ']' : arrdec('$1', '$2', '$4').
 expression ->
-    'ident' 'lparen' expression_list 'rparen' : function_call('$1', '$3').
+    'ident' '[' expression ']' : array('$1', '$3').
+expression ->
+    'ident' '(' ')' : function_call('$1', nil).
+expression ->
+    'ident' '(' expression_list ')' : function_call('$1', '$3').
 expression ->
     expression binary_operator expression : binary_op('$1', '$2','$3').
 expression ->
@@ -49,9 +53,9 @@ expression ->
     expression 'oror' expression : binary_op('oror', '$1', '$3').
 
 expression_list ->
-    expression : '$1'.
+    expression : ['$1'].
 expression_list ->
-    expression_list 'comma' expression : '$1', '$2'.
+    expression_list 'comma' expression : ['$1']++'$2'.
 
  
 binary_operator ->
@@ -88,26 +92,26 @@ statement ->
 statement ->
     'semi' : statement(nil).
 statement ->
-    'if' 'lparen' expression 'rparen' statement : if_expr('$3', '$5', nil). 
+    'if' '(' expression ')' statement : if_expr('$3', '$5', nil). 
 statement ->    
-    'if' 'lparen' expression 'rparen' statement 'else' statement : if_expr('$3', '$5', '$7').
+    'if' '(' expression ')' statement 'else' statement : if_expr('$3', '$5', '$7').
 statement ->
-    'while' 'lparen' expression 'rparen' statement : while('$3', '$5').
+    'while' '(' expression ')' statement : while('$3', '$5').
 statement ->			
     'return' expression 'semi' : return('$2').
 statement ->
-    'return' 'semi' : return(nil).
+    'return' 'semi' : return({void, 0}).
 
 simple_compound_statement ->
-    'lbrace' statement_list 'rbrace' : '$2'.
+    '{' statement_list '}' : '$2'.
 
 compound_statement ->
-    'lbrace' statement_list 'rbrace' : '$2'.
+    '{' statement_list '}' : '$2'.
 compound_statement ->
-    'lbrace' declaration_list statement_list 'rbrace' : '$2'++['$3'].
+    '{' declaration_list statement_list '}' : '$2'++['$3'].
 
 statement_list ->
-    '$empty' : nil.
+    '$empty' : [nil].
 statement_list ->
     statement : ['$1'].
 statement_list ->
@@ -132,7 +136,10 @@ base_type ->
 declarator ->
     'ident' : '$1'.
 declarator ->
-    'ident' 'lbrack' 'int_constant' 'rbrack' : arrdec('$1', '$3').
+    'ident' '[' 'int_constant' ']' : arrdec(nil, '$1', '$3').
+declarator ->
+    'ident' '[' ']' : arrdec(nil, '$1', nil).
+    
 
 
 program ->
@@ -151,11 +158,11 @@ toplevel_declaration ->
     declaration : global('$1').
 
 function_parameters ->
-    'lparen' 'void' 'rparen' : nil.
+    '(' 'void' ')' : nil.
 function_parameters ->
-    'lparen' 'rparen' : nil.
+    '(' ')' : nil.
 function_parameters ->
-    'lparen' formals_list 'rparen' : '$2'.
+    '(' formals_list ')' : '$2'.
 
 formals_list ->
     formal : ['$1'].
@@ -163,8 +170,7 @@ formals_list ->
     formals_list 'comma' formal : '$1'++['$3'].
 
 formal ->
-    base_type declarator : vardec('$1', '$2').	     
-    
+    base_type declarator : vardec('$1', '$2').
 
 Erlang code.
 
@@ -217,8 +223,9 @@ program(Decs, Source) ->
 	 source = Source
 	}.
 
-arrdec(Identifier, Size) ->
+arrdec(BaseType, Identifier, Size) ->
     #'ARRDEC'{
+	base_type = BaseType,
 	identifier = Identifier,
 	size = Size
        }.
@@ -286,19 +293,19 @@ binary_op(BinOp, Expr1, Expr2) ->
 	   line = line(BinOp)
 	  }.
 
-function_call({ident, IdentLine, _IdentLength, IdentValue}, FunctionList) ->
+function_call(Ident = {ident, IdentLine, _IdentLength, IdentValue}, FunctionList) ->
     #'EXPRESSION'{
 	       value = #'FUNCTION_CALL'{
-		 identifier = IdentValue,
-		 argument_list = [FunctionList]
+		 identifier = Ident,
+		 argument_list = FunctionList
 		},
 	       line = IdentLine
 	      }.
 		   
-array({IdentLine, _IdentLength, IdentValue}, Expression) ->
+array(Ident = {ident, IdentLine, _IdentLength, IdentValue}, Expression) ->
     #'EXPRESSION'{
        value = #'ARRAY'{
-	 identifier = IdentValue,
+	 identifier = Ident,
 	 expression = Expression
 	},
        line = IdentLine
