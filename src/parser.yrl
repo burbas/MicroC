@@ -293,7 +293,7 @@ binary_op(BinOp, Expr1, Expr2) ->
 	   line = line(BinOp)
 	  }.
 
-function_call(Ident = {ident, IdentLine, _IdentLength, IdentValue}, FunctionList) ->
+function_call(Ident = {ident, IdentLine, _IdentLength, _IdentValue}, FunctionList) ->
     #'EXPRESSION'{
 	       value = #'FUNCTION_CALL'{
 		 identifier = Ident,
@@ -302,7 +302,7 @@ function_call(Ident = {ident, IdentLine, _IdentLength, IdentValue}, FunctionList
 	       line = IdentLine
 	      }.
 		   
-array(Ident = {ident, IdentLine, _IdentLength, IdentValue}, Expression) ->
+array(Ident = {ident, IdentLine, _IdentLength, _IdentValue}, Expression) ->
     #'EXPRESSION'{
        value = #'ARRAY'{
 	 identifier = Ident,
