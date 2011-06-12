@@ -281,6 +281,8 @@ type_check([{int, _TokenLine}], State) ->
     State#state{type = int};
 type_check([{void, _TokenLine}], State) ->
     State#state{type = void};
+type_check([{char_constant, _TokenLine, _Value}], State) ->
+    State#state{type = char};
 type_check([nil|Tl], State) ->
     type_check(Tl, State);
 
