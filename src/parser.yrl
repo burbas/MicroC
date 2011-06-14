@@ -20,8 +20,6 @@ expression ->
 expression -> 
     'int_constant' : '$1'.
 expression ->
-    'char_constant' : '$1'.
-expression ->
     '(' expression ')' : '$2'.
 expression ->
     base_type 'ident' '[' expression ']' : arrdec('$1', '$2', '$4').
@@ -32,9 +30,9 @@ expression ->
 expression ->
     'ident' '(' expression_list ')' : function_call('$1', '$3').
 expression ->
-    expression binary_operator expression : binary_op('$1', '$2','$3').
+    expression binary_operator expression : binary_op('$2', '$1','$3').
 expression ->
-    expression 'minus' expression : binary_op('$2', '$1', '3').
+    expression 'minus' expression : binary_op('$2', '$1', '$3').
 expression ->
     expression 'mul' expression : binary_op('$2', '$1', '$3').
 expression ->
@@ -55,7 +53,7 @@ expression ->
 expression_list ->
     expression : ['$1'].
 expression_list ->
-    expression_list 'comma' expression : ['$1']++'$2'.
+    expression_list 'comma' expression : '$1'++['$3'].
 
  
 binary_operator ->
