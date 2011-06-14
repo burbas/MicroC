@@ -1,6 +1,7 @@
 
 Definitions.
 Comment = ((/\*([^*]|\*)*\*/)|(//.*\n))
+Character = \'((\\n|.))\'
 HiddenChars = ((\n)|(\r)|(\t)|(\s)|(\f))
 Identifier = (_|[a-zA-Z])(_|[a-zA-Z]|[0-9])*
 
@@ -39,10 +40,10 @@ return         : {token, {'return', TokenLine}}.
 while          : {token, {'while', TokenLine}}.
 {Comment}      : skip_token.
 {Identifier}   : {token, {'ident', TokenLine, TokenLen, list_to_atom(TokenChars)}}.
-\'[a-zA-Z]\'   : {token, {'char_constant', TokenLine, strip(TokenChars, TokenLen)}}.
+{Character}    : {token, {'int_constant', TokenLine, strip(TokenChars, TokenLen)}}.
 {HiddenChars}+ : skip_token.
 .              : {error, unknown_symbol}.
 
 Erlang code.
 strip(TokenChars, TokenLen) ->
-    erlang:list_to_atom(lists:sublist(TokenChars, 2, TokenLen - 2)).
+    lists:sublist(TokenChars, 2, TokenLen - 2).
