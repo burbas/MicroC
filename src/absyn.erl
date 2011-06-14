@@ -19,13 +19,15 @@
           depth = 0,
 	  type,
 	  current_function,
-	  return_type
+	  return_type = void,
+	  kind
          }).
 
 -record(symbol, {
 	  kind,
 	  type,
-	  attributes
+	  attributes,
+	  scope_depth
 	 }).
 
 -record(function_type, {
@@ -37,9 +39,9 @@
 insert_symbol(Name, Kind, Type, State) ->
     insert_symbol(Name, Kind, Type, [], State).
 
-insert_symbol(Name, Kind, Type, Attributes, State = #state{symbol_table=ST}) ->
+insert_symbol(Name, Kind, Type, Attributes, State = #state{symbol_table=ST, depth = Depth}) ->
     case dict:find(Name, ST) of
-	{ok, _Value} ->
+	{ok, #symbol{scope_depth = Depth}} ->
 	    error(already_declared, "~p have already been declared!", [Name]);
 	_ ->
 	    case Kind of
@@ -52,7 +54,7 @@ insert_symbol(Name, Kind, Type, Attributes, State = #state{symbol_table=ST}) ->
 		_ ->
 		    FType = Type
 	    end,
-	    NewST = dict:store(Name, #symbol{kind = Kind, type = FType, attributes = Attributes}, ST),
+	    NewST = dict:store(Name, #symbol{kind = Kind, type = FType, attributes = Attributes, scope_depth = Depth}, ST),
 	    State#state{symbol_table = NewST, type = FType}
     end.
 
@@ -61,7 +63,7 @@ lookup_symbol(Name, #state{symbol_table = ST}) ->
 	{ok, #symbol{kind = Kind, type = Type, attributes = Attributes}} ->
 	    {ok, Kind, Type, Attributes};
 	_ ->
-	    {error, not_found}
+	    {error, not_found, Name}
     end.
 
 lookup_symbol(Name, Kind, #state{symbol_table = ST}) ->
@@ -69,7 +71,7 @@ lookup_symbol(Name, Kind, #state{symbol_table = ST}) ->
 	{ok, #symbol{kind = Kind, type = Type, attributes = Attributes}} ->
 	    {ok, Type, Attributes};
 	_ ->
-	    {error, not_found}
+	    {error, not_found, Name}
     end.
 
 lookup_symbol(Name, Kind, Arguments, #state{symbol_table = ST}) ->
@@ -87,25 +89,30 @@ lookup_symbol(Name, Kind, Arguments, #state{symbol_table = ST}) ->
 		     (P) ->
 			  P
 		  end, Arguments),
+
 	    case Type of
 		#function_type{arguments = ArgumentTypes, return_type = ReturnType} ->
 		    {ok, ReturnType, Attributes};
+		ArgumentTypes ->
+		    {ok, Type, Attributes};
 		_ ->
-		    case Type == ArgumentTypes of
-			true ->
-			    {ok, Type, Attributes};
-			_ ->
-			    {error, not_same_type}
-		    end
+		    {error, not_same_type}
 	    end;
 	_ ->
-	    {error, not_found}
+	    {error, not_found, Name}
     end.
 
 get_name({ident, _TokenLine, _TokenLen, Name}) ->
     Name;
 get_name(#'ARRDEC'{base_type = _, identifier = Identifier, size = _}) ->
-    Identifier.
+    get_name(Identifier).
+
+legal_types(#state{type = Type1}, #state{type = Type2}) ->
+    (((Type1 == int) orelse (Type1 == char)) 
+      andalso 
+     ((Type2 == int) orelse (Type2 == char)))
+    orelse
+     Type1 == Type2.
 
 type_check([], State) ->
     State;
@@ -113,13 +120,27 @@ type_check([], State) ->
 type_check(P, State) when not is_list(P) ->
     type_check([P], State);
 
+type_check([P|Tl], State) when is_list(P) ->
+    NewState = type_check(P, State),
+    type_check(Tl, NewState);
+
 type_check([#'EXTFUNC'{name = Name, return_type = ReturnType, formals = Formals}|Tl], State) ->
     case State#state.depth of
         0 ->
-	    ArgTypes = lists:map(fun(X) -> type_check(X, State) end, Formals),
-	    RetType = type_check(ReturnType, State),
-
-            NewState = insert_symbol(Name, func, {ArgTypes, RetType}, extern, State),
+	    ArgTypes = 
+		case Formals of
+		    nil ->
+			[void];
+		    _ ->
+			lists:map(
+			  fun(X) -> 
+				  (type_check(X, State))#state.type 
+			  end, 
+			  Formals)
+		end,
+	    RetType = (type_check(ReturnType, State))#state.type,
+	    
+            NewState = insert_symbol(get_name(Name), func, {ArgTypes, RetType}, extern, State),
             type_check(Tl, NewState);
         _ ->
             error(not_global_scope, "External function ~p declared in a non-global scope", [Name])
@@ -135,64 +156,73 @@ type_check([#'GLOBAL'{declaration = Declarator}|Tl], State) ->
     end;
 
 %% Function-type
-type_check([#'FUNCTION'{name = Name, formals = Formals, return_type = ReturnType, locals = _Locals, body = Body}|Tl], State) ->
-    ArgTypes = case Formals of
-		   nil ->
-		       [void];
-		   _ ->
-		       lists:map(
-			 fun(X) ->
-				 #state{type = Type} = type_check(X, State),
-				 Type
-			 end,
-			 Formals
-			)
-	       end,
+type_check([#'FUNCTION'{name = Name, formals = Formals, return_type = ReturnType, locals = _Locals, body = Body}|Tl], State = #state{depth = Depth}) ->
+    io:format("FUNCTION: ~p~n", [get_name(Name)]),
+    ArgTypes =
+	case Formals of
+	    nil ->
+		[void];
+	    _ ->
+		lists:map(
+		  fun(X) ->
+			  (type_check(X, State#state{depth = Depth +1}))#state.type
+		  end,
+		  Formals
+		 )
+	end,
+
     %% Check the return type
     RetType = (type_check(ReturnType, State))#state.type,
     
     %% Insert function in the table as (name = Name, type = func, spec = {ArgumentTypes, ReturnType})
-    NewST = insert_symbol(Name, func, {ArgTypes, RetType}, State),
-
-    NewST2 = type_check(Formals, NewST#state{current_function = Name}),
-
-    %% Increase the scope depth and type-check the body
-    Bdy = type_check(Body, NewST2),
+    NewState = insert_symbol(get_name(Name), func, {ArgTypes, RetType}, State),
     
-    case Bdy#state.return_type of
-	RetType ->
-	    %% Typecheck the rest of the list
-	    type_check(Tl, NewST);
-	undefined when RetType == void ->
-	    type_check(Tl, NewST);
-	_ ->
-	    error(return_value_invalid, "Function ~p is of type ~p but returns ~p", [Name, RetType, Bdy#state.return_type])
-    end;
+    
+    NewState2 = type_check(Formals, NewState#state{depth = Depth + 1}),
+   
+    type_check(Body, NewState2#state{current_function = get_name(Name)}),
+    
+    type_check(Tl, NewState);
 
+%%% OBS! Declarator kan vara ARRDEC också
 type_check([#'VARDEC'{base_type = BaseType, declarator = Declarator}|Tl], State) ->
     %% Get the type
     Type = type_check(BaseType, State),
+
+    Kind = 
+	case Declarator of
+	    {ident, _TokenLine, _TokenLen, _Name} ->
+		var;
+	    _ ->
+		array
+	end,
     
     %% Inserts the symbol
-    NewST = insert_symbol(get_name(Declarator), var, Type#state.type, State),
+    NewST = insert_symbol(get_name(Declarator), Kind, Type#state.type, Type),
    
     %% Make a recursive call on the tail
     type_check(Tl, NewST);
 
 type_check([#'ARRDEC'{identifier = Identifier, base_type = BaseType, size = Size}|Tl], State) ->
     %% Get the type
-    Type = type_check(BaseType, State),
+    Type = case BaseType of
+	       nil ->
+		   State#state.type;
+	       _ ->
+		   (type_check(BaseType, State))#state.type
+	   end,
     
     %% Get the name
     Name = get_name(Identifier),
 
     %% Inserts the symbol
-    NewState = insert_symbol(Name, array, Type#state.type, Size, State),
+    NewState = insert_symbol(Name, array, Type, Size, State),
+
     type_check(Tl, NewState);
 
 type_check([#'WHILE'{expression = Expression, statement = Statement}|Tl], State) ->
     NewState = type_check(Expression, State),
-    type_check(Statement, NewState),
+    type_check(Statement, NewState#state{depth = NewState#state.depth +1}),
     type_check(Tl, State);
 
 type_check([#'IF'{expression = Expression, statement1 = Stmt1, statement2 = Stmt2}|Tl], State) ->
@@ -206,39 +236,69 @@ type_check([#'IF'{expression = Expression, statement1 = Stmt1, statement2 = Stmt
     end,
     type_check(Tl, State);
 
-type_check([#'STATEMENT'{value = Value}|Tl], State) ->
-    type_check(Value, State),
+type_check([#'STATEMENT'{value = SValue}|Tl], State) ->
+    type_check(SValue, State#state{depth = State#state.depth + 1}),
     type_check(Tl, State);
 
 type_check([#'EXPRESSION'{value = Value}|Tl], State) ->
     NewState = type_check(Value, State),
     type_check(Tl, NewState);
 
-%% THIS NEEDS TO BE FIXED
-type_check([#'UNARY'{operation = _Operation, expression = Expression}|Tl], State) ->
-    type_check(Expression, State),
-    type_check(Tl, State);
 
-type_check([#'BINARY_OP'{operation = _Operation, expression1 = Expr1, expression2 = Expr2}|Tl], State) ->
+type_check([#'UNARY'{operation = _Operation, expression = Expression}|Tl], State) ->
+    NewState = type_check(Expression, State),
+    type_check(Tl, NewState);
+
+type_check([#'BINARY_OP'{operation = Operation, expression1 = Expr1, expression2 = Expr2}|Tl], State) ->
     TExpr1 = type_check(Expr1, State),
     TExpr2 = type_check(Expr2, TExpr1),
     
-    case TExpr1#state.type == TExpr2#state.type of
+    case  legal_types(TExpr1, TExpr2) of
 	true ->
-	    type_check(Tl, TExpr2);
+	    case TExpr2#state.kind == dirty_array orelse TExpr1#state.kind == dirty_array of
+		true ->
+		    error(illegal_pointer, "Pointers not supported by mC");
+		_ ->
+		    type_check(Tl, TExpr2)
+	    end;
 	_ ->
-	    error(unmatched_types, "Unmatched types in binary operation: ~p * ~p", [TExpr1#state.type, TExpr2#state.type])
+	    error(unmatched_types, "Unmatched types in binary operation ~p: ~p * ~p (~p * ~p) in function ~p", [Operation, Expr1, Expr2, TExpr1#state.type, TExpr2#state.type, TExpr2#state.current_function])
     end;
 
 type_check([#'ASSIGN'{expr1 = Expr1, expr2 = Expr2}|Tl], State) ->
-    NewState = #state{type = TypeExpr1} = type_check(Expr1, State),
-    NewState2 = #state{type = TypeExpr2} = type_check(Expr2, NewState),
+    Expr1State = type_check(Expr1, State),
+    Expr2State = type_check(Expr2, Expr1State),
     
-    case TypeExpr1 == TypeExpr2 of
+    case legal_types(Expr1State, Expr2State) of
 	true ->
-	    type_check(Tl, NewState2);
+	    case Expr1State#state.kind == dirty_array orelse Expr2State#state.kind == dirty_array of
+		true ->
+		    error(illegal_pointer, "Pointers not supported by mC");
+		_ ->
+		    case Expr1State#state.kind of
+			var ->
+			    type_check(Tl, Expr2State);
+			array ->
+			    type_check(Tl, Expr2State);
+			_ ->
+			    error(no_assignment, "Can not assign non-variables")
+		    end
+	    end;
 	_ ->
-	    error(incompatible_types, "Can not assign ~p a value of ~p", [TypeExpr1, TypeExpr2])
+	    error(incompatible_types, "Can not assign ~p a value of ~p", 
+		  [Expr1State#state.type, Expr2State#state.type])
+    end;
+
+
+type_check([#'ARRAY'{identifier = Identifier, expression = Expr}|Tl], State) ->
+    {ok, Type, _} = lookup_symbol(get_name(Identifier), array, State),
+    NewState = type_check(Expr, State),
+
+    case NewState#state.type of
+	int ->
+	    type_check(Tl, State#state{type = Type, kind = array});
+	_ ->
+	    error(illegal_index, "Can't use datatype ~p as index in array", [NewState#state.type])
     end;
 
 type_check([#'EFFECT'{value = Value}|Tl], State) ->
@@ -247,10 +307,22 @@ type_check([#'EFFECT'{value = Value}|Tl], State) ->
 
 type_check([#'FUNCTION_CALL'{identifier = Identifier, argument_list = ArgumentList}|Tl], State) ->
     IdentName = get_name(Identifier),
-    ArgumentTypes = [ type_check(X, State) || X <- ArgumentList, X /= nil ],
     
-    lookup_symbol(IdentName, func, ArgumentTypes, State),
-    type_check(Tl, State);
+    ArgumentTypes = 
+	case ArgumentList of
+	    nil ->
+		[void];
+	    _ ->
+		lists:map(
+		  fun(X) ->
+			  (type_check(X, State))#state.type
+		  end, 
+		  ArgumentList)
+	end,
+
+    {ok, ReturnType, _} = lookup_symbol(IdentName, func, ArgumentTypes, State),
+
+    type_check(Tl, State#state{return_type = ReturnType, type = ReturnType});
 
 type_check([#'RETURN'{expression = Expression}|Tl], State = #state{current_function = CFunc}) ->
 
@@ -268,11 +340,13 @@ type_check([#'RETURN'{expression = Expression}|Tl], State = #state{current_funct
 %% The next four functions is used to match out the innermost values
 type_check([{ident, _TokenLine, _TokenLen, Name}], State) ->
     case lookup_symbol(Name, State) of
-	{ok, _, _, _} ->
-	    State#state{type = {ident, Name}};
+	{ok, array, Type, _} ->
+	    State#state{kind = dirty_array, type = Type};
+	{ok, Kind, Type, _} ->
+	    State#state{kind = Kind, type = Type};
 	{error, _} ->
 	    error(not_declared, "Use of undeclared variable ~p", [Name])
-    end;		
+    end;
 type_check([{int_constant, _TokenLine, _Value}], State) ->
     State#state{type = int};
 type_check([{char, _TokenLine}], State) ->
@@ -281,17 +355,11 @@ type_check([{int, _TokenLine}], State) ->
     State#state{type = int};
 type_check([{void, _TokenLine}], State) ->
     State#state{type = void};
-type_check([{char_constant, _TokenLine, _Value}], State) ->
-    State#state{type = char};
 type_check([nil|Tl], State) ->
     type_check(Tl, State);
 
-type_check([P|Tl], State) ->
-    io:format("LIST: Could not read ~p, continue with the rest of the list~n", [P]),
-    type_check(Tl, State);
-
 type_check(P, _State) ->
-    io:format("SINGLE ELEMENT: Could not read ~p, continue with the rest of the list~n", [P]).
+    error(unknown_symbol, "Could not parse ~p", [P]).
 
 
 
