@@ -1,0 +1,15 @@
+;; Object semantic/
+;; SEMANTICDB Tags save file
+(semanticdb-project-database-file "semantic/"
+  :tables (list 
+   (semanticdb-table "s09.c"
+    :major-mode 'c-mode
+    :tags '(("main" function (:arguments (("" variable (:type "void") (reparse-symbol arg-sub-list) [10 15])) :type "int") nil [1 59]))
+    :file "s09.c"
+    :pointmax 60
+    )
+   )
+  :file "semantic.cache"
+  :semantic-tag-version "2.0beta3"
+  :semanticdb-version "2.0beta3"
+  )
