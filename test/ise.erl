@@ -138,17 +138,17 @@ ise15() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_same_type}, Reason)
+	    ?assertMatch({error, not_same_type}, Reason)
     end.
 
 ise16() ->
    try
-	microc:compile(?CPATH++"se16.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
+       microc:compile(?CPATH++"se16.c")
+   catch
+       _:Value ->
+	   {{{_, Reason}, _}, _} = Value,
 		?assertMatch({error, not_same_type}, Reason)
-    end.
+   end.
 
 ise17() ->
     try
@@ -156,16 +156,16 @@ ise17() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, illegal_pointer}, Reason)
+	    ?assertMatch({error, illegal_pointer}, Reason)
     end.
 
 ise18() ->
-   try
+    try
 	microc:compile(?CPATH++"se18.c")
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, illegal_pointer}, Reason)
+	    ?assertMatch({error, illegal_pointer}, Reason)
     end.
 
 ise19() ->
@@ -174,16 +174,16 @@ ise19() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, illegal_pointer}, Reason)
+	    ?assertMatch({error, illegal_pointer}, Reason)
     end.
 
 ise20() ->
-   try
+    try
 	microc:compile(?CPATH++"se20.c")
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, foo}, Reason)
+	    ?assertMatch({error,illegal_pointer}, Reason)
     end.
 
 ise21() ->
@@ -192,17 +192,17 @@ ise21() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, b}, Reason)
+	    ?assertMatch({error,return_missmatch}, Reason)
     end.
 
 ise22() ->
    try
-	microc:compile(?CPATH++"se22.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, foo}, Reason)
-    end.
+       microc:compile(?CPATH++"se22.c")
+   catch
+       _:Value ->
+	   {{{_, Reason}, _}, _} = Value,
+	   ?assertMatch({error,illegal_pointer}, Reason)
+   end.
 
 ise23() ->
     try
@@ -210,16 +210,16 @@ ise23() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, b}, Reason)
+	    ?assertMatch({error, not_found, b}, Reason)
     end.
 
 ise24() ->
-   try
+    try
 	microc:compile(?CPATH++"se24.c")
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, foo}, Reason)
+	    ?assertMatch({error,illegal_pointer}, Reason)
     end.
 
 ise25() ->
@@ -228,16 +228,16 @@ ise25() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, b}, Reason)
+	    ?assertMatch({error, no_assignment}, Reason)
     end.
 
 ise26() ->
-   try
+    try
 	microc:compile(?CPATH++"se26.c")
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, foo}, Reason)
+	    ?assertMatch({error,not_same_type}, Reason)
     end.
 
 ise27() ->
@@ -246,7 +246,7 @@ ise27() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, b}, Reason)
+		?assertMatch({error,return_missmatch}, Reason)
     end.
 
 ise28() ->
@@ -255,7 +255,7 @@ ise28() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, foo}, Reason)
+		?assertMatch({error,return_missmatch}, Reason)
     end.
 
 ise29() ->
@@ -264,7 +264,7 @@ ise29() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, b}, Reason)
+		?assertMatch({error,already_declared}, Reason)
     end.
 
 ise30() ->
@@ -273,7 +273,7 @@ ise30() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, foo}, Reason)
+		?assertMatch({error,illegal_pointer}, Reason)
     end.
 
 ise31() ->
@@ -282,7 +282,7 @@ ise31() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, b}, Reason)
+		?assertMatch({error,already_declared}, Reason)
     end.
 
 ise32() ->
@@ -291,7 +291,7 @@ ise32() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, foo}, Reason)
+		?assertMatch({error,unmatched_types}, Reason)
     end.
 
 ise33() ->
@@ -300,7 +300,7 @@ ise33() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, b}, Reason)
+		?assertMatch({error,not_same_type}, Reason)
     end.
 
 ise34() ->
@@ -309,5 +309,5 @@ ise34() ->
     catch
 	_:Value ->
 	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, foo}, Reason)
+		?assertMatch({error,not_same_type}, Reason)
     end.
