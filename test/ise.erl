@@ -10,7 +10,9 @@
 helper(File) ->
     case catch microc:compile(?CPATH++File) of
 	{'EXIT', Error} ->
-	    Error
+	    Error;
+	A ->
+	    A
     end.
 
 ise01() ->
