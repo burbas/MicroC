@@ -97,7 +97,7 @@ end_per_testcase(_TestCase, _Config) ->
 %% @end
 %%--------------------------------------------------------------------
 groups() ->
-    [{incorrect_semantic, [sequence], [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
+    [{incorrect_semantic, [], [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
 				       ise13,ise14,ise15,ise16,ise17,ise18,ise19,ise20,ise21,ise22,ise23,ise24,
 				       ise25,ise26,ise27,ise28,ise29,ise30,ise31,ise32,ise33,ise34]}].
 
@@ -136,113 +136,106 @@ my_test_case() ->
 %% @end
 %%--------------------------------------------------------------------
 ise01(_Config) ->
-    {error, not_found, b} = helper("se01.c").
+    {error, not_found, b} = mrh:helper(?CTPATH,"se01.c").
 
 ise02(_Config) ->
-    {error, not_found, foo} = helper("se02.c").
+    {error, not_found, foo} = mrh:helper(?CTPATH,"se02.c").
 
 ise03(_Config) ->
-    {error, not_found, output} = helper("se03.c").
+    {error, not_found, output} = mrh:helper(?CTPATH,"se03.c").
  
 ise04(_Config) ->
-    {error, already_decleared} = helper("se04.c").
+    {error, already_decleared} = mrh:helper(?CTPATH,"se04.c").
 
 ise05(_Config) ->
-    {error, already_decleared} = helper("se05.c").
+    {error, already_decleared} = mrh:helper(?CTPATH,"se05.c").
    
 ise06(_Config) ->
-    {error, already_decleared} = helper("se06.c").
+    {error, already_decleared} = mrh:helper(?CTPATH,"se06.c").
 
 ise07(_Config) ->
-    {error, return_missmatch} = helper("se07.c").
+    {error, return_missmatch} = mrh:helper(?CTPATH,"se07.c").
 
 ise08(_Config) ->
-    {error, return_missmatch} = helper("se08.c").
+    {error, return_missmatch} = mrh:helper(?CTPATH,"se08.c").
     
 ise09(_Config) ->
-    {error, return_missmatch} = helper("se09.c").
+    {error, return_missmatch} = mrh:helper(?CTPATH,"se09.c").
    
 ise10(_Config) ->
-    {error, not_found, n} = helper("se10.c").
+    {error, not_found, n} = mrh:helper(?CTPATH,"se10.c").
     
 ise11(_Config) ->
-    {error, incompatible_types} = helper("se11.c").
+    {error, incompatible_types} = mrh:helper(?CTPATH,"se11.c").
     
 ise12(_Config) ->
-    {error, not_found, a} = helper("se12.c").
+    {error, not_found, a} = mrh:helper(?CTPATH,"se12.c").
     
 ise13(_Config) ->
-    {error, unmatched_types} = helper("se13.c").
+    {error, unmatched_types} = mrh:helper(?CTPATH,"se13.c").
    
 ise14(_Config) ->
-    {error, not_found, f} = helper("se14.c").
+    {error, not_found, f} = mrh:helper(?CTPATH,"se14.c").
    
 ise15(_Config) ->
-    {error, not_same_type} = helper("se15.c").
+    {error, not_same_type} = mrh:helper(?CTPATH,"se15.c").
     
 ise16(_Config) ->
-    {error, not_same_type} = helper("se16.c").
+    {error, not_same_type} = mrh:helper(?CTPATH,"se16.c").
    
 ise17(_Config) ->
-    {error, illegal_pointer} = helper("se17.c").
+    {error, illegal_pointer} = mrh:helper(?CTPATH,"se17.c").
     
 ise18(_Config) ->
-    {error, illegal_pointer} = helper("se18.c").
+    {error, illegal_pointer} = mrh:helper(?CTPATH,"se18.c").
     
 ise19(_Config) ->
-    {error, illegal_pointer} = helper("se19.c").
+    {error, illegal_pointer} = mrh:helper(?CTPATH,"se19.c").
     
 ise20(_Config) ->
-    {error,illegal_pointer} = helper("se20.c").
+    {error,illegal_pointer} = mrh:helper(?CTPATH,"se20.c").
     
 ise21(_Config) ->
-    {error,return_missmatch} = helper("se21.c").
+    {error,return_missmatch} = mrh:helper(?CTPATH,"se21.c").
     
 ise22(_Config) ->
-    {error,illegal_pointer} = helper("se22.c").
+    {error,illegal_pointer} = mrh:helper(?CTPATH,"se22.c").
    
 ise23(_Config) ->
-    {error, not_found, b} = helper("se23.c").
+    {error, not_found, b} = mrh:helper(?CTPATH,"se23.c").
    
 ise24(_Config) ->
-    {error,illegal_pointer} = helper("se24.c").
+    {error,illegal_pointer} = mrh:helper(?CTPATH,"se24.c").
    
 ise25(_Config) ->
-    {error, no_assignment} = helper("se25.c").
+    {error, no_assignment} = mrh:helper(?CTPATH,"se25.c").
     
 ise26(_Config) ->
-    {error,not_same_type} = helper("se26.c").
+    {error,not_same_type} = mrh:helper(?CTPATH,"se26.c").
     
 ise27(_Config) ->
-    {error,return_missmatch} = helper("se27.c").
+    {error,return_missmatch} = mrh:helper(?CTPATH,"se27.c").
     
 ise28(_Config) ->
-    {error,return_missmatch} = helper("se28.c").
+    {error,return_missmatch} = mrh:helper(?CTPATH,"se28.c").
     
 ise29(_Config) ->
-    {error,already_declared} = helper("se29.c").
+    {error,already_declared} = mrh:helper(?CTPATH,"se29.c").
     
 ise30(_Config) ->
-    {error,illegal_pointer} = helper("se30.c").
+    {error,illegal_pointer} = mrh:helper(?CTPATH,"se30.c").
     
 ise31(_Config) ->
-    {error,already_declared} = helper("se31.c").
+    {error,already_declared} = mrh:helper(?CTPATH,"se31.c").
     
 ise32(_Config) ->
-    {error,unmatched_types} = helper("se32.c").
+    {error,unmatched_types} = mrh:helper(?CTPATH,"se32.c").
     
 ise33(_Config) ->
-    {error,not_same_type} = helper("se33.c").
+    {error,not_same_type} = mrh:helper(?CTPATH,"se33.c").
     
 ise34(_Config) ->
-    {error,not_same_type} = helper("se34.c").
+    {error,not_same_type} = mrh:helper(?CTPATH,"se34.c").
     
 
 
-helper(File) ->
-    case catch microc:compile(?CTPATH++File) of
-	{'EXIT', Error} ->
-	    Error;
-	A ->
-	    A
-    end.
