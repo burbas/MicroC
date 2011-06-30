@@ -6,308 +6,113 @@
 
 -compile(export_all).
 
-ise01() ->
-    try
-	microc:compile(?CPATH++"se01.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, b}, Reason)
+
+helper(File) ->
+    case catch microc:compile(?CPATH++File) of
+	{'EXIT', Error} ->
+	    Error
     end.
+
+ise01() ->
+    ?assertMatch({error, not_found, b}, helper("se01.c")).
+	
 
 ise02() ->
-   try
-	microc:compile(?CPATH++"se02.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, foo}, Reason)
-    end.
+   ?assertMatch({error, not_found, foo}, helper("se02.c")).
 
 ise03() ->
-    try
-	microc:compile(?CPATH++"se03.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, output}, Reason)
-    end.
-
+    ?assertMatch({error, not_found, output}, helper("se03.c")).
+ 
 ise04() ->
-   try
-	microc:compile(?CPATH++"se04.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, already_decleared}, Reason)
-    end.
+    ?assertMatch({error, already_decleared}, helper("se04.c")).
 
 ise05() ->
-    try
-	microc:compile(?CPATH++"se05.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, already_decleared}, Reason)
-    end.
-
+    ?assertMatch({error, already_decleared}, helper("se05.c")).
+   
 ise06() ->
-   try
-	microc:compile(?CPATH++"se06.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, already_decleared}, Reason)
-    end.
+    ?assertMatch({error, already_decleared}, helper("se06.c")).
 
 ise07() ->
-    try
-	microc:compile(?CPATH++"se07.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, return_missmatch}, Reason)
-    end.
+    ?assertMatch({error, return_missmatch}, helper("se07.c")).
 
 ise08() ->
-   try
-	microc:compile(?CPATH++"se08.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, return_missmatch}, Reason)
-    end.
-
+    ?assertMatch({error, return_missmatch}, helper("se08.c")).
+    
 ise09() ->
-    try
-	microc:compile(?CPATH++"se09.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, return_missmatch}, Reason)
-    end.
-
+    ?assertMatch({error, return_missmatch}, helper("se09.c")).
+   
 ise10() ->
-   try
-	microc:compile(?CPATH++"se10.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, n}, Reason)
-    end.
-
+    ?assertMatch({error, not_found, n}, helper("se10.c")).
+    
 ise11() ->
-    try
-	microc:compile(?CPATH++"se11.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, incompatible_types}, Reason)
-    end.
-
+    ?assertMatch({error, incompatible_types}, helper("se11.c")).
+    
 ise12() ->
-   try
-	microc:compile(?CPATH++"se12.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_found, a}, Reason)
-    end.
-
+    ?assertMatch({error, not_found, a}, helper("se12.c")).
+    
 ise13() ->
-    try
-	microc:compile(?CPATH++"se13.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, unmatched_types}, Reason)
-    end.
-
+    ?assertMatch({error, unmatched_types}, helper("se13.c")).
+   
 ise14() ->
-   try
-	microc:compile(?CPATH++"se14.c")
-   catch
-       _:Value ->
-	   {{{_, Reason}, _}, _} = Value,
-	   ?assertMatch({error, not_found, f}, Reason)
-   end.
-
+    ?assertMatch({error, not_found, f}, helper("se14.c")).
+   
 ise15() ->
-    try
-	microc:compile(?CPATH++"se15.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-	    ?assertMatch({error, not_same_type}, Reason)
-    end.
-
+    ?assertMatch({error, not_same_type}, helper("se15.c")).
+    
 ise16() ->
-   try
-       microc:compile(?CPATH++"se16.c")
-   catch
-       _:Value ->
-	   {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error, not_same_type}, Reason)
-   end.
-
+    ?assertMatch({error, not_same_type}, helper("se16.c")).
+   
 ise17() ->
-    try
-	microc:compile(?CPATH++"se17.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-	    ?assertMatch({error, illegal_pointer}, Reason)
-    end.
-
+    ?assertMatch({error, illegal_pointer}, helper("se17.c")).
+    
 ise18() ->
-    try
-	microc:compile(?CPATH++"se18.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-	    ?assertMatch({error, illegal_pointer}, Reason)
-    end.
-
+    ?assertMatch({error, illegal_pointer}, helper("se18.c")).
+    
 ise19() ->
-    try
-	microc:compile(?CPATH++"se19.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-	    ?assertMatch({error, illegal_pointer}, Reason)
-    end.
-
+    ?assertMatch({error, illegal_pointer}, helper("se19.c")).
+    
 ise20() ->
-    try
-	microc:compile(?CPATH++"se20.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-	    ?assertMatch({error,illegal_pointer}, Reason)
-    end.
-
+    ?assertMatch({error,illegal_pointer}, helper("se20.c")).
+    
 ise21() ->
-    try
-	microc:compile(?CPATH++"se21.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-	    ?assertMatch({error,return_missmatch}, Reason)
-    end.
-
+    ?assertMatch({error,return_missmatch}, helper("se21.c")).
+    
 ise22() ->
-   try
-       microc:compile(?CPATH++"se22.c")
-   catch
-       _:Value ->
-	   {{{_, Reason}, _}, _} = Value,
-	   ?assertMatch({error,illegal_pointer}, Reason)
-   end.
-
+    ?assertMatch({error,illegal_pointer}, helper("se22.c")).
+   
 ise23() ->
-    try
-	microc:compile(?CPATH++"se23.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-	    ?assertMatch({error, not_found, b}, Reason)
-    end.
-
+    ?assertMatch({error, not_found, b}, helper("se23.c")).
+   
 ise24() ->
-    try
-	microc:compile(?CPATH++"se24.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-	    ?assertMatch({error,illegal_pointer}, Reason)
-    end.
-
+    ?assertMatch({error,illegal_pointer}, helper("se24.c")).
+   
 ise25() ->
-    try
-	microc:compile(?CPATH++"se25.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-	    ?assertMatch({error, no_assignment}, Reason)
-    end.
-
+    ?assertMatch({error, no_assignment}, helper("se25.c")).
+    
 ise26() ->
-    try
-	microc:compile(?CPATH++"se26.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-	    ?assertMatch({error,not_same_type}, Reason)
-    end.
-
+    ?assertMatch({error,not_same_type}, helper("se26.c")).
+    
 ise27() ->
-    try
-	microc:compile(?CPATH++"se27.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error,return_missmatch}, Reason)
-    end.
-
+    ?assertMatch({error,return_missmatch}, helper("se27.c")).
+    
 ise28() ->
-   try
-	microc:compile(?CPATH++"se28.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error,return_missmatch}, Reason)
-    end.
-
+    ?assertMatch({error,return_missmatch}, helper("se28.c")).
+    
 ise29() ->
-    try
-	microc:compile(?CPATH++"se29.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error,already_declared}, Reason)
-    end.
-
+    ?assertMatch({error,already_declared}, helper("se29.c")).
+    
 ise30() ->
-   try
-	microc:compile(?CPATH++"se30.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error,illegal_pointer}, Reason)
-    end.
-
+    ?assertMatch({error,illegal_pointer}, helper("se30.c")).
+    
 ise31() ->
-    try
-	microc:compile(?CPATH++"se31.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error,already_declared}, Reason)
-    end.
-
+    ?assertMatch({error,already_declared}, helper("se31.c")).
+    
 ise32() ->
-   try
-	microc:compile(?CPATH++"se32.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error,unmatched_types}, Reason)
-    end.
-
+    ?assertMatch({error,unmatched_types}, helper("se32.c")).
+    
 ise33() ->
-    try
-	microc:compile(?CPATH++"se33.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error,not_same_type}, Reason)
-    end.
-
+    ?assertMatch({error,not_same_type}, helper("se33.c")).
+    
 ise34() ->
-   try
-	microc:compile(?CPATH++"se34.c")
-    catch
-	_:Value ->
-	    {{{_, Reason}, _}, _} = Value,
-		?assertMatch({error,not_same_type}, Reason)
-    end.
+    ?assertMatch({error,not_same_type}, helper("se34.c")).
+    
