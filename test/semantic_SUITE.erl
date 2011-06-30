@@ -97,7 +97,9 @@ end_per_testcase(_TestCase, _Config) ->
 %% @end
 %%--------------------------------------------------------------------
 groups() ->
-    [{incorrect_semantic, [sequence], []}].
+    [{incorrect_semantic, [sequence], [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
+				       ise13,ise14,ise15,ise16,ise17,ise18,ise19,ise20,ise21,ise22,ise23,ise24,
+				       ise25,ise26,ise27,ise28,ise29,ise30,ise31,ise32,ise33,ise34]}].
 
 %%--------------------------------------------------------------------
 %% @spec all() -> GroupsAndTestCases | {skip,Reason}
@@ -108,11 +110,13 @@ groups() ->
 %% @end
 %%--------------------------------------------------------------------
 all() -> 
-    [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
-     ise13,ise14,ise15,ise16,ise17,ise18,ise19,ise20,ise21,ise22,ise23,ise24,
-     ise25,ise26,ise27,ise28,ise29,ise30,ise31,ise32,ise33,ise34].
+    [{group, incorrect_semantic}].
+    %% [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
+    %%  ise13,ise14,ise15,ise16,ise17,ise18,ise19,ise20,ise21,ise22,ise23,ise24,
+    %%  ise25,ise26,ise27,ise28,ise29,ise30,ise31,ise32,ise33,ise34]
 
-%%{group, incorrect_semantic}].
+
+
 
 %%--------------------------------------------------------------------
 %% @spec TestCase() -> Info
@@ -132,7 +136,6 @@ my_test_case() ->
 %% @end
 %%--------------------------------------------------------------------
 ise01(_Config) ->
-    os:cmd("pwd"),
     {error, not_found, b} = helper("se01.c").
 
 ise02(_Config) ->
