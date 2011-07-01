@@ -1,6 +1,6 @@
-Nonterminals  expression binary_operator assignment_expression argument_expression_list statement simple_compound_statement compound_statement statement_list declaration declaration_list_opt declaration_list base_type declarator program toplevel_declaration_list toplevel_declaration function_parameters formals_list formal expression_list.
+Nonterminals  expression binary_operator statement simple_compound_statement compound_statement statement_list declaration declaration_list base_type declarator program toplevel_declaration_list toplevel_declaration function_parameters formals_list formal expression_list.
 
-Terminals 'andand' 'char' 'char_constant' 'comma' 'div' 'else' 'eq' 'eqeq' 'gteq' 'gt' 'void' 'if' 'int' 'int_constant' '{' '}' '[' ']' '(' ')' 'lt' 'lteq' 'minus' 'mul' 'not' 'noteq' 'oror' 'plus' 'return' 'semi' 'while' 'ident'.
+Terminals 'andand' 'char' 'comma' 'div' 'else' 'eq' 'eqeq' 'gteq' 'gt' 'void' 'if' 'int' 'int_constant' '{' '}' '[' ']' '(' ')' 'lt' 'lteq' 'minus' 'mul' 'not' 'noteq' 'oror' 'plus' 'return' 'semi' 'while' 'ident'.
 
 Rootsymbol program.
 
@@ -68,19 +68,6 @@ binary_operator ->
     'noteq' : '$1'.
 binary_operator ->
     'eqeq' : '$1'.
-
-assignment_expression ->
-    expression : '$1'.
-assignment_expression ->
-    'ident' 'eq' expression : ass_exp('$1', '$2').
-
-
-argument_expression_list ->
-    assignment_expression : '$1'.
-argument_expression_list ->
-    argument_expression_list assignment_expression : ['$1', '$2'].
-argument_expression_list ->
-    argument_expression_list 'comma' assignment_expression : ['$1', '$3'].
 
 
 statement ->				 
