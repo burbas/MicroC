@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 30 Jun 2011 by Daniel <daniel@minidaniel>
 %%%-------------------------------------------------------------------
--module(semantic_SUITE).
+-module(microc_SUITE).
 
 -compile(export_all).
 
@@ -97,9 +97,12 @@ end_per_testcase(_TestCase, _Config) ->
 %% @end
 %%--------------------------------------------------------------------
 groups() ->
-    [{incorrect_semantic, [], [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
-				       ise13,ise14,ise15,ise16,ise17,ise18,ise19,ise20,ise21,ise22,ise23,ise24,
-				       ise25,ise26,ise27,ise28,ise29,ise30,ise31,ise32,ise33,ise34]}].
+    [{incorrect, [], [{semantic, [], [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
+				      ise13,ise14,ise15,ise16,ise17,ise18,ise19,ise20,ise21,ise22,ise23,ise24,
+				      ise25,ise26,ise27,ise28,ise29,ise30,ise31,ise32,ise33,ise34]},
+		      {lexer, [], [ile01, ile02, ile03, ile04]},
+		      {parser, [], [ipe01, ipe02, ipe03, ipe04, ipe05, ipe06, ipe07, ipe08, ipe09, 
+				    ipe10, ipe11, ipe12, ipe13, ipe14]}]}].
 
 %%--------------------------------------------------------------------
 %% @spec all() -> GroupsAndTestCases | {skip,Reason}
@@ -110,7 +113,7 @@ groups() ->
 %% @end
 %%--------------------------------------------------------------------
 all() -> 
-    [{group, incorrect_semantic}].
+    [{group, incorrect}].
     %% [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
     %%  ise13,ise14,ise15,ise16,ise17,ise18,ise19,ise20,ise21,ise22,ise23,ise24,
     %%  ise25,ise26,ise27,ise28,ise29,ise30,ise31,ise32,ise33,ise34]
