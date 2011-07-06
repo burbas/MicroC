@@ -36,6 +36,12 @@
 	 }).
 
 
+-ifdef(debug).
+-define(PRINT_ERROR(MESSAGE, PARAMETERS), io:format("Error: " ++ MESSAGE ++ "~n", PARAMTERES)).
+-else.
+-define(PRINT_ERROR(T, Y), true).
+-endif.
+
 insert_symbol(Name, Kind, Type, State) ->
     insert_symbol(Name, Kind, Type, [], State).
 
@@ -63,7 +69,7 @@ lookup_symbol(Name, #state{symbol_table = ST}) ->
 	{ok, #symbol{kind = Kind, type = Type, attributes = Attributes}} ->
 	    {ok, Kind, Type, Attributes};
 	_ ->
-	    {error, not_found, Name}
+	    error(not_found, "~p is not declared", [Name])
     end.
 
 lookup_symbol(Name, Kind, #state{symbol_table = ST}) ->
@@ -71,7 +77,7 @@ lookup_symbol(Name, Kind, #state{symbol_table = ST}) ->
 	{ok, #symbol{kind = Kind, type = Type, attributes = Attributes}} ->
 	    {ok, Type, Attributes};
 	_ ->
-	    {error, not_found, Name}
+	    error(not_found, "~p is not declared", [Name])
     end.
 
 lookup_symbol(Name, Kind, Arguments, #state{symbol_table = ST}) ->
@@ -96,10 +102,10 @@ lookup_symbol(Name, Kind, Arguments, #state{symbol_table = ST}) ->
 		ArgumentTypes ->
 		    {ok, Type, Attributes};
 		_ ->
-		    {error, not_same_type}
+		    error(type_mismatch, "", [])
 	    end;
 	_ ->
-	    {error, not_found, Name}
+	    error(not_found, "~p not declared", [Name])
     end.
 
 get_name({ident, _TokenLine, _TokenLen, Name}) ->
@@ -157,7 +163,6 @@ type_check([#'GLOBAL'{declaration = Declarator}|Tl], State) ->
 
 %% Function-type
 type_check([#'FUNCTION'{name = Name, formals = Formals, return_type = ReturnType, locals = _Locals, body = Body}|Tl], State = #state{depth = Depth}) ->
-    io:format("FUNCTION: ~p~n", [get_name(Name)]),
     ArgTypes =
 	case Formals of
 	    nil ->
@@ -249,7 +254,7 @@ type_check([#'UNARY'{operation = _Operation, expression = Expression}|Tl], State
     NewState = type_check(Expression, State),
     type_check(Tl, NewState);
 
-type_check([#'BINARY_OP'{operation = Operation, expression1 = Expr1, expression2 = Expr2}|Tl], State) ->
+type_check([#'BINARY_OP'{operation = _Operation, expression1 = Expr1, expression2 = Expr2}|Tl], State) ->
     TExpr1 = type_check(Expr1, State),
     TExpr2 = type_check(Expr2, TExpr1),
     
@@ -257,12 +262,12 @@ type_check([#'BINARY_OP'{operation = Operation, expression1 = Expr1, expression2
 	true ->
 	    case TExpr2#state.kind == dirty_array orelse TExpr1#state.kind == dirty_array of
 		true ->
-		    error(illegal_pointer, "Pointers not supported by mC");
+		    error(illegal_pointer, "Pointers not supported by mC", []);
 		_ ->
 		    type_check(Tl, TExpr2)
 	    end;
 	_ ->
-	    error(unmatched_types, "Unmatched types in binary operation ~p: ~p * ~p (~p * ~p) in function ~p", [Operation, Expr1, Expr2, TExpr1#state.type, TExpr2#state.type, TExpr2#state.current_function])
+	    error(unmatched_types, "Unmatched types in function ~p: Expected: ~p got ~p", [TExpr2#state.current_function, TExpr1#state.type, TExpr2#state.type])
     end;
 
 type_check([#'ASSIGN'{expr1 = Expr1, expr2 = Expr2}|Tl], State) ->
@@ -273,7 +278,7 @@ type_check([#'ASSIGN'{expr1 = Expr1, expr2 = Expr2}|Tl], State) ->
 	true ->
 	    case Expr1State#state.kind == dirty_array orelse Expr2State#state.kind == dirty_array of
 		true ->
-		    error(illegal_pointer, "Pointers not supported by mC");
+		    error(illegal_pointer, "Pointers not supported by mC", []);
 		_ ->
 		    case Expr1State#state.kind of
 			var ->
@@ -281,7 +286,7 @@ type_check([#'ASSIGN'{expr1 = Expr1, expr2 = Expr2}|Tl], State) ->
 			array ->
 			    type_check(Tl, Expr2State);
 			_ ->
-			    error(no_assignment, "Can not assign non-variables")
+			    error(no_assignment, "Can not assign non-variables", [])
 		    end
 	    end;
 	_ ->
@@ -343,9 +348,7 @@ type_check([{ident, _TokenLine, _TokenLen, Name}], State) ->
 	{ok, array, Type, _} ->
 	    State#state{kind = dirty_array, type = Type};
 	{ok, Kind, Type, _} ->
-	    State#state{kind = Kind, type = Type};
-	{error, _} ->
-	    error(not_declared, "Use of undeclared variable ~p", [Name])
+	    State#state{kind = Kind, type = Type}
     end;
 type_check([{int_constant, _TokenLine, _Value}], State) ->
     State#state{type = int};
@@ -370,7 +373,7 @@ analyze(#'PROGRAM'{decs = Decs, source = _Source}) ->
 
 
 error(Reason, Message, Parameters) ->
-    io:format("Error: " ++ Message ++ "~n", Parameters),
-    exit(error, Reason).
+    ?PRINT_ERROR(Message, Parameters),
+    error({error, Reason, Parameters}).
 
 	    

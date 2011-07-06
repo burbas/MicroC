@@ -101,16 +101,15 @@ handle_call({compile, Filename}, _From, State) ->
     case file:read_file(Filename) of
 	{ok, Binary} ->
 	    ContentList = erlang:binary_to_list(Binary),
+	    {_, Tokens, _} = tokenize(ContentList),
+	    {ok, AST} = parser:parse(Tokens),
 	    
-%	    try 
-		{_, Tokens, _} = tokenize(ContentList),
-		{ok, AST} = parser:parse(Tokens),
-		_Semantic = absyn:analyze(AST),
-		{reply, AST, State};
-%	    catch
-%		P:Reason -> io:format("~p: ~p~n", [P, Reason]),
-%			       {reply, ok, State}
-%	    end;
+	    case (catch absyn:analyze(AST)) of
+		{'EXIT', {Reason, Stack}} ->
+		    {reply, Reason, State};
+		_ ->
+		    {reply, AST, State}
+	    end;
 	Error ->
 	    {reply, Error, State}
     end;
