@@ -104,7 +104,11 @@ statement_list ->
 
 
 declaration ->
-    base_type declarator 'semi' : vardec('$1', '$2').
+    base_type 'ident' 'semi' : vardec('$1', '$2').
+declaration ->
+    base_type 'ident' '[' 'int_constant' ']' 'semi' : arrdec('$1', '$2', '$4').
+declaration ->
+    base_type 'ident' '[' ']' 'semi' : arrdec('$1', '$2', nil).
 
 declaration_list ->
     declaration : ['$1'].
