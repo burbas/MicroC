@@ -1,4 +1,4 @@
-Nonterminals  expression binary_operator statement simple_compound_statement compound_statement statement_list declaration declaration_list base_type declarator program toplevel_declaration_list toplevel_declaration function_parameters formals_list formal expression_list.
+Nonterminals  expression binary_operator statement simple_compound_statement statement_list declaration declaration_list base_type declarator program toplevel_declaration_list toplevel_declaration function_parameters formals_list formal expression_list.
 
 Terminals 'andand' 'char' 'comma' 'div' 'else' 'eq' 'eqeq' 'gteq' 'gt' 'void' 'if' 'int' 'int_constant' '{' '}' '[' ']' '(' ')' 'lt' 'lteq' 'minus' 'mul' 'not' 'noteq' 'oror' 'plus' 'return' 'semi' 'while' 'ident'.
 
@@ -21,8 +21,6 @@ expression ->
     'int_constant' : '$1'.
 expression ->
     '(' expression ')' : '$2'.
-expression ->
-    base_type 'ident' '[' expression ']' : arrdec('$1', '$2', '$4').
 expression ->
     'ident' '[' expression ']' : array('$1', '$3').
 expression ->
@@ -90,13 +88,8 @@ statement ->
 simple_compound_statement ->
     '{' statement_list '}' : '$2'.
 
-compound_statement ->
-    '{' statement_list '}' : '$2'.
-compound_statement ->
-    '{' declaration_list statement_list '}' : '$2'++['$3'].
-
 statement_list ->
-    '$empty' : [nil].
+    '$empty' : [void].
 statement_list ->
     statement : ['$1'].
 statement_list ->
@@ -139,8 +132,11 @@ toplevel_declaration_list ->
 toplevel_declaration_list ->
     toplevel_declaration_list toplevel_declaration : '$1'++['$2'].
 
+
 toplevel_declaration ->
-    base_type 'ident' function_parameters compound_statement : function('$2', '$3', '$1', '$4').
+    base_type 'ident' function_parameters '{' statement_list '}' : function('$2', '$3', '$1', '$5', nil).
+toplevel_declaration ->
+    base_type 'ident' function_parameters '{' declaration_list statement_list '}' : function('$2', '$3', '$1', '$6', '$5').
 toplevel_declaration ->
     base_type 'ident' function_parameters 'semi' : ext_function('$2', '$3', '$1').
 toplevel_declaration ->
@@ -197,11 +193,12 @@ ext_function(Name, Formals, ReturnType) ->
 	      return_type = ReturnType
 	     }.
 
-function(Name, Formals, ReturnType, Body) ->
+function(Name, Formals, ReturnType, Body, Locals) ->
     #'FUNCTION'{
 	  name = Name,
 	  formals = Formals,
 	  return_type = ReturnType,
+	  locals = Locals,
 	  body = Body
 	 }.
 	  

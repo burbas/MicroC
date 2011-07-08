@@ -162,7 +162,7 @@ type_check([#'GLOBAL'{declaration = Declarator}|Tl], State) ->
     end;
 
 %% Function-type
-type_check([#'FUNCTION'{name = Name, formals = Formals, return_type = ReturnType, locals = _Locals, body = Body}|Tl], State = #state{depth = Depth}) ->
+type_check([#'FUNCTION'{name = Name, formals = Formals, return_type = ReturnType, locals = Locals, body = Body}|Tl], State = #state{depth = Depth}) ->
     ArgTypes =
 	case Formals of
 	    nil ->
@@ -184,8 +184,8 @@ type_check([#'FUNCTION'{name = Name, formals = Formals, return_type = ReturnType
     
     
     NewState2 = type_check(Formals, NewState#state{depth = Depth + 1}),
-   
-    type_check(Body, NewState2#state{current_function = get_name(Name)}),
+    NewState3 = type_check(Locals, NewState2),
+    type_check(Body, NewState3#state{current_function = get_name(Name)}),
     
     type_check(Tl, NewState);
 
