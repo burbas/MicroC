@@ -5,14 +5,12 @@
 
 -record('ARRAY', {
 	  identifier,
-	  expression,
-	  line :: integer()
+	  expression
 	 }).
 
 -record('FUNCTION_CALL', {
 	  identifier,
-	  argument_list,
-	  line :: integer()
+	  argument_list
 	 }).
 
 -record('BINARY_OP', {
@@ -28,8 +26,7 @@
 
 -record('UNARY', {
 	  operation,
-	  expression,
-	  line :: integer()
+	  expression
 	 }).
 
 -record('STATEMENT', {
