@@ -1,27 +1,18 @@
--record('IDENTIFIER', {
-	  value,
-	  line
-	 }).
-
-
 -record('EXPRESSION', {
 	  value,
-	  line
-	 }).
-
--record('INT_CONSTANT', {
-	  value,
-	  line
+	  line :: integer()
 	 }).
 
 -record('ARRAY', {
 	  identifier,
-	  expression
+	  expression,
+	  line :: integer()
 	 }).
 
 -record('FUNCTION_CALL', {
 	  identifier,
-	  argument_list
+	  argument_list,
+	  line :: integer()
 	 }).
 
 -record('BINARY_OP', {
@@ -37,7 +28,8 @@
 
 -record('UNARY', {
 	  operation,
-	  expression
+	  expression,
+	  line :: integer()
 	 }).
 
 -record('STATEMENT', {
@@ -50,27 +42,32 @@
 -record('IF', {
 	  expression,
 	  statement1,
-	  statement2
+	  statement2,
+	  line :: integer()
 	 }).
 
 -record('WHILE', {
 	  expression,
-	  statement
+	  statement,
+	  line :: integer()
 	 }).
 
 -record('RETURN', {
-	  expression
+	  expression,
+	  line :: integer()
 	 }).	  
 
 -record('VARDEC', {
 	  base_type, 
-	  declarator
+	  declarator,
+	  line :: integer()
 	 }).
 
 -record('ARRDEC', {
 	  identifier,
 	  base_type,
-	  size
+	  size :: integer(),
+	  line :: integer()
 	 }).
 
 
@@ -84,13 +81,15 @@
 	  formals,
 	  return_type,
 	  locals,
-	  body
+	  body,
+	  line :: integer()
 	 }).
 
 -record('EXTFUNC', {
 	  name,
 	  return_type,
-	  formals
+	  formals,
+	  line :: integer()
 	 }).
 
 -record('GLOBAL', {
