@@ -22,31 +22,23 @@ expression ->
 expression ->
     '(' expression ')' : '$2'.
 expression ->
-    'ident' '[' expression ']' : array('$1', '$3').
+    'ident' '[' expression ']' : array('$1', '$3', line('$1')).
 expression ->
-    'ident' '(' ')' : function_call('$1', nil).
+    'ident' '(' ')' : function_call('$1', nil, line('$1')).
 expression ->
-    'ident' '(' expression_list ')' : function_call('$1', '$3').
+    'ident' '(' expression_list ')' : function_call('$1', '$3', line('$1')).
 expression ->
-    expression binary_operator expression : binary_op('$2', '$1','$3').
+    expression binary_operator expression : binary_op('$2', '$1','$3', line('$2')).
 expression ->
-    expression 'minus' expression : binary_op('$2', '$1', '$3').
+    expression 'eq' expression : assign('$1', '$3', line('$2')).
 expression ->
-    expression 'mul' expression : binary_op('$2', '$1', '$3').
+    'minus' expression : unary('minus', '$2', line('$1')).
 expression ->
-    expression 'plus' expression: binary_op('$2', '$1', '$3').
+    'not' expression : unary('not', '$2', line('$1')).
 expression ->
-    expression 'div' expression : binary_op('$2', '$1', '$3').
+    expression 'andand' expression : binary_op('andand', '$1', '$3', line('$2')).
 expression ->
-    expression 'eq' expression : assign('$1', '$3').
-expression ->
-    'minus' expression : unary('minus', '$2').
-expression ->
-    'not' expression : unary('not', '$2').
-expression ->
-    expression 'andand' expression : binary_op('andand', '$1', '$3').
-expression ->
-    expression 'oror' expression : binary_op('oror', '$1', '$3').
+    expression 'oror' expression : binary_op('oror', '$1', '$3', line('$2')).
 
 expression_list ->
     expression : ['$1'].
@@ -66,6 +58,14 @@ binary_operator ->
     'noteq' : '$1'.
 binary_operator ->
     'eqeq' : '$1'.
+binary_operator ->
+    'minus' : '$1'.
+binary_operator ->
+    'mul' : '$1'.
+binary_operator ->
+    'plus' : '$1'.
+binary_operator ->
+    'div' : '$1'.
 
 
 statement ->				 
@@ -75,15 +75,15 @@ statement ->
 statement ->
     'semi' : statement(nil).
 statement ->
-    'if' '(' expression ')' statement : if_expr('$3', '$5', nil). 
-statement ->    
-    'if' '(' expression ')' statement 'else' statement : if_expr('$3', '$5', '$7').
+    'if' '(' expression ')' statement : if_expr('$3', '$5', nil, line('$1')). 
 statement ->
-    'while' '(' expression ')' statement : while('$3', '$5').
+    'if' '(' expression ')' statement 'else' statement : if_expr('$3', '$5', '$7', line('$1')).
+statement ->
+    'while' '(' expression ')' statement : while('$3', '$5', line('$1')).
 statement ->			
-    'return' expression 'semi' : return('$2').
+    'return' expression 'semi' : return('$2', line('$1')).
 statement ->
-    'return' 'semi' : return({void, 0}).
+    'return' 'semi' : return({void, 0}, line('$1')).
 
 simple_compound_statement ->
     '{' statement_list '}' : '$2'.
@@ -97,11 +97,11 @@ statement_list ->
 
 
 declaration ->
-    base_type 'ident' 'semi' : vardec('$1', '$2').
+    base_type 'ident' 'semi' : vardec('$1', '$2', line('$1')).
 declaration ->
-    base_type 'ident' '[' 'int_constant' ']' 'semi' : arrdec('$1', '$2', '$4').
+    base_type 'ident' '[' 'int_constant' ']' 'semi' : arrdec('$1', '$2', '$4', line('$1')).
 declaration ->
-    base_type 'ident' '[' ']' 'semi' : arrdec('$1', '$2', nil).
+    base_type 'ident' '[' ']' 'semi' : arrdec('$1', '$2', nil, line('$1')).
 
 declaration_list ->
     declaration : ['$1'].
@@ -118,9 +118,9 @@ base_type ->
 declarator ->
     'ident' : '$1'.
 declarator ->
-    'ident' '[' 'int_constant' ']' : arrdec(nil, '$1', '$3').
+    'ident' '[' 'int_constant' ']' : arrdec(nil, '$1', '$3', line('$1')).
 declarator ->
-    'ident' '[' ']' : arrdec(nil, '$1', nil).
+    'ident' '[' ']' : arrdec(nil, '$1', nil, line('$1')).
     
 
 
@@ -134,11 +134,11 @@ toplevel_declaration_list ->
 
 
 toplevel_declaration ->
-    base_type 'ident' function_parameters '{' statement_list '}' : function('$2', '$3', '$1', '$5', nil).
+    base_type 'ident' function_parameters '{' statement_list '}' : function('$2', '$3', '$1', '$5', nil, line('$1')).
 toplevel_declaration ->
-    base_type 'ident' function_parameters '{' declaration_list statement_list '}' : function('$2', '$3', '$1', '$6', '$5').
+    base_type 'ident' function_parameters '{' declaration_list statement_list '}' : function('$2', '$3', '$1', '$6', '$5', line('$1')).
 toplevel_declaration ->
-    base_type 'ident' function_parameters 'semi' : ext_function('$2', '$3', '$1').
+    base_type 'ident' function_parameters 'semi' : ext_function('$2', '$3', '$1', line('$1')).
 toplevel_declaration ->
     declaration : global('$1').
 
@@ -155,7 +155,7 @@ formals_list ->
     formals_list 'comma' formal : '$1'++['$3'].
 
 formal ->
-    base_type declarator : vardec('$1', '$2').
+    base_type declarator : vardec('$1', '$2', line('$1')).
 
 Erlang code.
 
@@ -171,35 +171,27 @@ line({_, Line, _, _}) ->
 line(_) ->
     0.
 
-%ass_exp(Identifier, Expression) ->
-%    #'EXPRESSION'{
-%	 value = #'ASSIGN'{
-%	   expr1 = #'EXPRESSION'{
-%	     value = {'VAR', Identifier}
-%	    },
-%	   expr2 = Expression
-%	  }
-%	}.
-
 global(Declaration) ->
     #'GLOBAL'{
 	declaration = Declaration
        }.
 
-ext_function(Name, Formals, ReturnType) ->
+ext_function(Name, Formals, ReturnType, Line) ->
     #'EXTFUNC'{
 	      name = Name,
 	      formals = Formals,
-	      return_type = ReturnType
+	      return_type = ReturnType,
+	      line = Line
 	     }.
 
-function(Name, Formals, ReturnType, Body, Locals) ->
+function(Name, Formals, ReturnType, Body, Locals, Line) ->
     #'FUNCTION'{
 	  name = Name,
 	  formals = Formals,
 	  return_type = ReturnType,
 	  locals = Locals,
-	  body = Body
+	  body = Body,
+	  line = Line
 	 }.
 	  
 
@@ -209,17 +201,19 @@ program(Decs, Source) ->
 	 source = Source
 	}.
 
-arrdec(BaseType, Identifier, Size) ->
+arrdec(BaseType, Identifier, Size, Line) ->
     #'ARRDEC'{
 	base_type = BaseType,
 	identifier = Identifier,
-	size = Size
+	size = Size,
+	line = Line
        }.
 
-vardec(BaseType, Declarator) ->
+vardec(BaseType, Declarator, Line) ->
     #'VARDEC'{
 	base_type = BaseType,
-	declarator = Declarator
+	declarator = Declarator,
+	line = Line
        }.
 
 statement(Value) ->
@@ -227,22 +221,25 @@ statement(Value) ->
 	   value = Value
 	  }.
 
-return(Expression) ->
+return(Expression, Line) ->
     statement(#'RETURN'{
-		 expression = Expression
+		 expression = Expression,
+		 line = Line
 		}).
 
-while(Expression, Statement) ->
+while(Expression, Statement, Line) ->
     statement(#'WHILE'{
 		 expression = Expression,
-		 statement = Statement
+		 statement = Statement,
+		 line = Line
 		}).
 
-if_expr(Expression, Statement1, Statement2) ->
+if_expr(Expression, Statement1, Statement2, Line) ->
     statement(#'IF'{
 		 expression = Expression,
 		 statement1 = Statement1,
-		 statement2 = Statement2
+		 statement2 = Statement2,
+		 line = Line
 		}).
 
 
@@ -251,48 +248,48 @@ effect(Expression) ->
 		 value = Expression
 		}).
 
-unary(Operation, Expression) ->
+unary(Operation, Expression, Line) ->
     #'EXPRESSION'{
        value = #'UNARY'{
 	 operation = Operation,
 	 expression = Expression
 	},
-       line = 0
+       line = Line
       }.
 
-assign(Expr1, Expr2) ->
+assign(Expr1, Expr2, Line) ->
     #'EXPRESSION'{
 	value = #'ASSIGN'{
-	  expr1 = Expr1, 
+	  expr1 = Expr1,
 	  expr2 = Expr2
 	 },
-	line = 0
+	line = Line
        }.
 
-binary_op(BinOp, Expr1, Expr2) ->
+binary_op(BinOp, Expr1, Expr2, Line) ->
     #'EXPRESSION'{
 	   value = #'BINARY_OP'{
 	     operation = BinOp,
 	     expression1 = Expr1,
 	     expression2 = Expr2
 	    },
-	   line = line(BinOp)
+	   line = Line
 	  }.
 
-function_call(Ident = {ident, IdentLine, _IdentLength, _IdentValue}, FunctionList) ->
+function_call(Ident, FunctionList, Line) ->
     #'EXPRESSION'{
 	       value = #'FUNCTION_CALL'{
 		 identifier = Ident,
 		 argument_list = FunctionList
 		},
-	       line = IdentLine
+	       line = Line
 	      }.
 		   
-array(Ident = {ident, IdentLine, _IdentLength, _IdentValue}, Expression) ->
+array(Ident, Expression, Line) ->
     #'EXPRESSION'{
        value = #'ARRAY'{
 	 identifier = Ident,
 	 expression = Expression
 	},
-       line = IdentLine
+       line = Line
       }.
