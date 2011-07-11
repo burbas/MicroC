@@ -47,25 +47,25 @@ expression_list ->
 
  
 binary_operator ->
-    'lt' : '$1'.
+    'lt' : 'lt'.
 binary_operator ->
-    'gt' : '$1'.
+    'gt' : 'gt'.
 binary_operator ->
-    'lteq' : '$1'.
+    'lteq' : 'lteq'.
 binary_operator ->
-    'gteq' : '$1'.
+    'gteq' : 'gteq'.
 binary_operator ->
-    'noteq' : '$1'.
+    'noteq' : 'noteq'.
 binary_operator ->
-    'eqeq' : '$1'.
+    'eqeq' : 'eqeq'.
 binary_operator ->
-    'minus' : '$1'.
+    'minus' : 'minus'.
 binary_operator ->
-    'mul' : '$1'.
+    'mul' : 'mul'.
 binary_operator ->
-    'plus' : '$1'.
+    'plus' : 'plus'.
 binary_operator ->
-    'div' : '$1'.
+    'div' : 'div'.
 
 
 statement ->				 
