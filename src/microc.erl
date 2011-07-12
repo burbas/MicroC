@@ -15,7 +15,8 @@
 	 start_link/0,
 	 lex/1,
 	 parse/1,
-	 compile/1
+	 analyze/1,
+	 intermediate/1
 	]).
 
 %% gen_server callbacks
@@ -45,12 +46,17 @@ lex(Filename) ->
     gen_server:call(?SERVER, {lex, Filename}).
 
 parse(Filename) ->
-    {_, Tokens, _} = gen_server:call(?SERVER, {lex, Filename}),
+    {_, Tokens, _} = lex(Filename),
     gen_server:call(?SERVER, {parse, Tokens}).
 
-compile(Filename) ->
-    gen_server:call(?SERVER, {compile, Filename}).
+analyze(Filename) ->
+    AST = parse(Filename),
+    gen_server:call(?SERVER, {analyze, AST}).
 
+intermediate(Filename) ->
+    AST = analyze(Filename),
+    gen_server:call(?SERVER, {intermediate, AST}).
+    
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
@@ -97,22 +103,18 @@ handle_call({parse, Tokens}, _From, State) ->
     {ok, AST} = parser:parse(Tokens),
     {reply, AST, State};
 
-handle_call({compile, Filename}, _From, State) ->
-    case file:read_file(Filename) of
-	{ok, Binary} ->
-	    ContentList = erlang:binary_to_list(Binary),
-	    {_, Tokens, _} = tokenize(ContentList),
-	    {ok, AST} = parser:parse(Tokens),
-	    
-	    case (catch absyn:analyze(AST)) of
-		{'EXIT', {Reason, Stack}} ->
-		    {reply, Reason, State};
-		_ ->
-		    {reply, AST, State}
-	    end;
-	Error ->
-	    {reply, Error, State}
+handle_call({analyze, AST}, _From, State) ->
+    case (catch absyn:analyze(AST)) of
+	{'EXIT', {Reason, _Stack}} ->
+	    {reply, Reason, State};
+	_ ->
+	    {reply, AST, State}
     end;
+
+handle_call({intermediate, AST}, _From, State) ->
+    Reply = rtl:ast_to_rtl(AST),
+    {reply, Reply, State};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
