@@ -193,7 +193,33 @@ flatten([#'IF'{expression = Expr, statement1 = Stmt1, statement2 = Stmt2}|Tl], S
     flatten(Tl, State#state{ir = IR, previous_temp = []});
 
 flatten([#'WHILE'{expression = Expr, statement = Stmt}|Tl], State) ->
-    flatten(Tl, State);
+    {Testlbl, NewState} = newLabel(State),
+    {Bodylbl, NewState2} = newLabel(NewState),
+    {Temp, NewState3} = newTemp(NewState2),
+
+    ExprState = flatten(Expr, NewState3),
+
+    IR = [#'RTL_EVAL'{
+	     dest = Temp,
+	     value = #'RTL_ICON'{int = 0}
+	    },
+	  #'RTL_JUMP'{
+		       label = Testlbl
+		     },
+	  #'RTL_LABELDEF'{
+		       label = Bodylbl
+		      }] ++
+	ExprState#state.ir ++
+	[#'RTL_LABELDEF'{
+	    label = Testlbl
+	   },
+	 #'RTL_CJUMP'{
+		       relop = ne,
+		       temp1 = ExprState#state.previous_temp,
+		       temp2 = Temp
+		     }],
+	 
+    flatten(Tl, ExprState#state{ir = IR, previous_temp = []});
 
 flatten([#'RETURN'{expression = {void, _}}|Tl], State = #state{current_function = CF}) ->
     Endlbl = lookup("__endlbl_" ++ CF, State),
