@@ -93,7 +93,9 @@ flatten([#'FUNCTION_CALL'{identifier = Identifier, argument_list = ArgumentList}
     Name = unwrap(Identifier),
     ArgState = flatten(ArgumentList, clean(State)),
 
-    flatten(Tl, State#state{ir = State#state.ir ++ [#'RTL_CALL'{function = Name, arguments = ArgState#state.ir}]});
+    IR = State#state.ir ++ [#'RTL_CALL'{function = Name, arguments = ArgState#state.ir}],
+
+    flatten(Tl, State#state{ir = IR});
 
 flatten([#'STATEMENT'{value = Value}|Tl], State) ->
     NewState = flatten(Value, State),
@@ -142,8 +144,43 @@ flatten([#'UNARY'{operation = 'minus', expression = Expr}|Tl], State) ->
     flatten(Tl, ExprState#state{ir = IR, previous_temp = Temp2});
 
 flatten([#'UNARY'{operation = 'not', expression = Expr}|Tl], State) ->
-    %% Not yet implemented
-    flatten(Tl, State);
+
+    ExprState = flatten(Expr, State),
+
+    {Temp1, NewState} = newTemp(ExprState),
+    {Onelbl, NewState2} = newLabel(NewState),
+    {Endlbl, NewState3} = newLabel(NewState2),
+
+    IR = 
+	State#state.ir ++
+	ExprState#state.ir ++
+	[
+	 #'RTL_CJUMP'{
+	    relop = 'eq',
+	    temp1 = ExprState#state.previous_temp,
+	    temp2 = #'RTL_ICON'{int = 0},
+	    label = Onelbl
+	   },
+	 #'RTL_EVAL'{
+		      dest = ExprState#state.previous_temp,
+		      value = #'RTL_ICON'{int = 0}
+		    },
+	 #'RTL_JUMP'{
+		      label = Endlbl
+		    },
+	 #'RTL_LABELDEF'{
+		      label = Onelbl
+		     },
+	 #'RTL_EVAL'{
+		      dest = ExprState#state.previous_temp,
+		      value = #'RTL_ICON'{int = 1}
+		    },
+	 #'RTL_LABELDEF'{
+		      label = Endlbl
+		     }
+	],
+
+    flatten(Tl, NewState3#state{ir = IR});
 
 flatten([#'ASSIGN'{expr1 = Expr1, expr2 = Expr2}|Tl], State) ->
     {Temp, NewState} = newTemp(State),
