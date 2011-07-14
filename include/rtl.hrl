@@ -46,6 +46,21 @@
 	  temp2
 	 }).
 
+-record('RTL_DIV', {
+	  temp1, 
+	  temp2
+	 }).
+
+-record('RTL_MUL', {
+	  temp1, 
+	  temp2
+	 }).
+
+-record('RTL_ADD', {
+	  temp1, 
+	  temp2
+	 }).
+
 -record('RTL_EVAL', {
 	  dest,
 	  value
