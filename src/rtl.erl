@@ -59,8 +59,6 @@ lookup(Name, State = #state{symboltable = ST}) ->
 	    {error, not_found}
     end.
 
-
-
 flatten([], State) ->
     State;
 flatten([#'GLOBAL'{declaration = Declaration}|Tl], State) ->
@@ -114,7 +112,31 @@ flatten([#'BINARY_OP'{operation = OP, expression1 = Expr1, expression2 = Expr2}|
     FExpr1 = flatten(Expr1, NewState),
     FExpr2 = flatten(Expr2, FExpr1),
 
-    IR = State#state.ir ++ FExpr1#state.ir ++ FExpr2#state.ir ++ [#'RTL_BINARY'{binop = OP, dest = Temp, temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}],
+    %% Binary operations needs to be handled differently
+    BinResult = 
+	case OP of
+	    'minus' ->
+		[#'RTL_SUB'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}];
+	    'plus' ->
+		[#'RTL_ADD'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}];
+	    'div' ->
+		[#'RTL_DIV'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}];
+	    'mul' ->
+		[#'RTL_MUL'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}];
+	    _ ->
+		[#'RTL_BINARY'{
+		    binop = OP, 
+		    dest = Temp, 
+		    temp1 = FExpr1#state.previous_temp, 
+		    temp2 = FExpr2#state.previous_temp}
+		]
+	end,
+    
+    IR = 
+	State#state.ir ++ 
+	FExpr1#state.ir ++ 
+	FExpr2#state.ir ++ 
+	BinResult,
 
     flatten(Tl, State#state{ir = IR, previous_temp = Temp});
 
