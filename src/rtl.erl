@@ -296,7 +296,7 @@ flatten([#'FUNCTION'{name = Name, formals = Formals, return_type = ReturnType, l
     NewState2 = insert("__ret_" ++ unwrap(Name), ReturnTemp, NewState),
 
     {Endlbl, NewState3} = newLabel(clean(NewState2)),
-    NewState4 = insert("__endlbl_" ++ unwrap(Name), Endlbl, NewState2),
+    NewState4 = insert("__endlbl_" ++ unwrap(Name), Endlbl, NewState3),
 
     FormalState = flatten(Formals, NewState4),
     LocalState = flatten(Locals, clean(FormalState)),
