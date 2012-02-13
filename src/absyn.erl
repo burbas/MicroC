@@ -335,9 +335,9 @@ type_check([#'RETURN'{expression = Expression}|Tl], State = #state{current_funct
 
     {ok, FReturnType, _} = lookup_symbol(CFunc, func, State),
 
-    case ReturnType == FReturnType#function_type.return_type of
+    case valid_return(ReturnType, FReturnType#function_type.return_type) of
 	true ->
-	    type_check(Tl, State#state{return_type = ReturnType});
+	    type_check(Tl, State);
 	_ ->
 	    error(return_missmatch, "The function ~p is declared as ~p but returns ~p", [CFunc, FReturnType#function_type.return_type, ReturnType])
     end;
@@ -377,3 +377,9 @@ error(Reason, Message, Parameters) ->
     error({error, Reason, Parameters}).
 
 	    
+valid_return(Type, Type) ->
+    true;
+valid_return('char', 'int') ->
+    true;
+valid_return(_, _) ->
+    false.
