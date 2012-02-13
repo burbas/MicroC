@@ -144,8 +144,8 @@ toplevel_declaration ->
 
 function_parameters ->
     '(' 'void' ')' : nil.
-function_parameters ->
-    '(' ')' : nil.
+%%function_parameters ->
+%%    '(' ')' : nil.
 function_parameters ->
     '(' formals_list ')' : '$2'.
 
