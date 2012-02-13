@@ -108,7 +108,7 @@ handle_call({analyze, AST}, _From, State) ->
 	{'EXIT', {Reason, _Stack}} ->
 	    {reply, Reason, State};
 	_ ->
-	    {reply, AST, State}
+	    {reply, {ok, AST}, State}
     end;
 
 handle_call({intermediate, AST}, _From, State) ->
