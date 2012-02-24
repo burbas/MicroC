@@ -54,7 +54,7 @@ analyze(Filename) ->
     gen_server:call(?SERVER, {analyze, AST}).
 
 intermediate(Filename) ->
-    AST = analyze(Filename),
+    {ok, AST} = analyze(Filename),
     gen_server:call(?SERVER, {intermediate, AST}).
     
 %%%===================================================================
