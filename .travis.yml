@@ -6,7 +6,8 @@ otp_release:
    - R14B03
    - R14B02
 
-script: "rebar ct"
+script: "rebar compile && rebar ct"
 
 notifications:
-    - niclas@burbas.se
+  - niclas@burbas.se
+  - william.sjostedt@gmail.com
