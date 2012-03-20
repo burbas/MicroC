@@ -1,9 +1,9 @@
-%%% @author Niclas Axelsson <burbas@niclas-axelssons-macbook-pro.local>
+%%% @author Niclas Axelsson <niclas@burbas.se>
 %%% @copyright (C) 2011, Niclas Axelsson
 %%% @doc
-%%%
+%%% Register Transfer Level implementation
 %%% @end
-%%% Created :  7 Jul 2011 by Niclas Axelsson <burbas@niclas-axelssons-macbook-pro.local>
+%%% Created :  7 Jul 2011 by Niclas Axelsson <niclas@burbas.se>
 
 -module(rtl).
 
@@ -24,9 +24,13 @@
 	 }).
 
 
+%%% Evaluate variables from function arguments differently
+%%% Fix framesize (And align)
+%%% Array operations
 
-sizeof(?BYTE) -> 1;
-sizeof(?LONG) -> 4. %% 32-bits representation
+
+sizeof(?BYTE) -> 1; %% 32-bits representation, 1 byte
+sizeof(?LONG) -> 4. %% 32-bits representation, 4 bytes
 
 convert_type({int_constant, _, _, _}) -> ?LONG;
 convert_type({char, _}) -> ?BYTE;
@@ -37,7 +41,8 @@ clean(State) -> State#state{ir = []}.
 
 unwrap({'int_constant', _TokenLine, Value}) -> Value;
 unwrap({'ident', _TokenLine, _TokenLen, Value}) -> Value; 
-unwrap({Value, _TokenLine}) -> Value.
+unwrap({Value, _TokenLine}) -> Value;
+unwrap(Value) -> Value.
  
 newLabel(State = #state{label_counter = LabelCounter}) ->
     Label = "L" ++ erlang:integer_to_list(LabelCounter),
@@ -67,7 +72,7 @@ flatten([#'GLOBAL'{declaration = Declaration}|Tl], State) ->
 	    #'VARDEC'{base_type = BaseType, declarator = Declarator} ->
 		State#state.ir ++ [#'RTL_DATA'{label = unwrap(Declarator), size = sizeof(convert_type(BaseType))}];
 	    #'ARRDEC'{identifier = Identifier, base_type = BaseType, size = Size} ->
-		State#state.ir ++ [#'RTL_DATA'{label = unwrap(Identifier), size = sizeof(convert_type(BaseType))*unwrap(Size)}]    
+		State#state.ir ++ [#'RTL_DATA'{label = unwrap(Identifier), size = sizeof(convert_type(BaseType))*unwrap(Size)}] 
 	end,
     flatten(Tl, State#state{ir = IR});
 
@@ -116,13 +121,13 @@ flatten([#'BINARY_OP'{operation = OP, expression1 = Expr1, expression2 = Expr2}|
     BinResult = 
 	case OP of
 	    'minus' ->
-		[#'RTL_SUB'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}];
+		[#'RTL_EVAL'{dest = Temp, value = #'RTL_SUB'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}}];
 	    'plus' ->
-		[#'RTL_ADD'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}];
+		[#'RTL_EVAL'{dest = Temp, value = #'RTL_ADD'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}}];
 	    'div' ->
-		[#'RTL_DIV'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}];
+		[#'RTL_EVAL'{dest = Temp, value = #'RTL_DIV'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}}];
 	    'mul' ->
-		[#'RTL_MUL'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}];
+		[#'RTL_EVAL'{dest = Temp, value = #'RTL_MUL'{temp1 = FExpr1#state.previous_temp, temp2 = FExpr2#state.previous_temp}}];
 	    _ ->
 		[#'RTL_BINARY'{
 		    binop = OP, 
@@ -277,7 +282,6 @@ flatten([#'WHILE'{expression = Expr, statement = Stmt}|Tl], State) ->
 		       temp1 = ExprState#state.previous_temp,
 		       temp2 = Temp
 		     }],
-	 
     flatten(Tl, ExprState#state{ir = IR, previous_temp = []});
 
 flatten([#'RETURN'{expression = {void, _}}|Tl], State = #state{current_function = CF}) ->
@@ -304,23 +308,27 @@ flatten([#'RETURN'{expression = Expr}|Tl], State = #state{current_function = CF}
 		      label = Endlbl
 		    }
 	],
-	    
+    
     flatten(Tl, ExprState#state{ir = IR, previous_temp = []});
 
 flatten([#'EXTFUNC'{name = Name, return_type = ReturnType, formals = Formals}|Tl], State) ->
     FName = unwrap(Name),
     Size = sizeof(convert_type(ReturnType)),
     
+    %% We need to insert func-types
+    %%    insert(extern_func, FName, convert_type(ReturnType), State),
+    
     flatten(Tl, State);
 
 flatten([#'FUNCTION'{name = Name, formals = Formals, return_type = ReturnType, locals = Locals, body = Body}|Tl], State) ->
-    {ReturnTemp, NewState} = newTemp(clean(State)),
-    NewState2 = insert("__ret_" ++ unwrap(Name), ReturnTemp, NewState),
+    {ReturnTemp, State1} = newTemp(clean(State)),
+    State2 = insert("__ret_" ++ unwrap(Name), ReturnTemp, State1),
 
-    {Endlbl, NewState3} = newLabel(clean(NewState2)),
-    NewState4 = insert("__endlbl_" ++ unwrap(Name), Endlbl, NewState3),
+    {Endlbl, State3} = newLabel(clean(State2)),
+    State4 = insert("__endlbl_" ++ unwrap(Name), Endlbl, State3),
 
-    FormalState = flatten(Formals, NewState4),
+    FormalState = flatten(Formals, State4),
+
     LocalState = flatten(Locals, clean(FormalState)),
 
     BodyState = flatten(Body, LocalState#state{current_function = unwrap(Name)}),
@@ -345,7 +353,10 @@ flatten([{ident, _TokenLine, _TokenLen, Value}], State) ->
 flatten([H|T], State) ->
     flatten(T, State);
 flatten(P, State) when not is_list(P) ->
-    flatten([P], State).
+    flatten([P], State);
+flatten(A, B) ->
+    io:format("Died on input: ~p and state ~p", [A,B]).
+
     
 
 ast_to_rtl(#'PROGRAM'{decs = Decs, source = _Source}) ->
