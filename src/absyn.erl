@@ -24,6 +24,7 @@
          }).
 
 -record(symbol, {
+	  name,
 	  kind,
 	  type,
 	  attributes,
@@ -101,8 +102,14 @@ lookup_symbol(Name, Kind, Arguments, #state{symbol_table = ST}) ->
 		    {ok, ReturnType, Attributes};
 		ArgumentTypes ->
 		    {ok, Type, Attributes};
+		A = #function_type{arguments = ArgTypes, return_type = ReturnType} ->
+		    io:format("FUNCTION NAME: ~p~n", [Name]),
+		    io:format("FUNCTION ~p~n", [A]),
+		    %% We need to check if the types are compatible (If we are dealing with array we need exact types)
+		    [ error(type_mismatch, "", [ArgTypes, ArgumentTypes]) || not compatible_types(ArgTypes, ArgumentTypes) ],
+		    {ok, ReturnType, Attributes};
 		_ ->
-		    error(type_mismatch, "", [])
+		    error(type_mismatch, "", [Type])
 	    end;
 	_ ->
 	    error(not_found, "~p not declared", [Name])
@@ -113,12 +120,6 @@ get_name({ident, _TokenLine, _TokenLen, Name}) ->
 get_name(#'ARRDEC'{base_type = _, identifier = Identifier, size = _}) ->
     get_name(Identifier).
 
-legal_types(#state{type = Type1}, #state{type = Type2}) ->
-    (((Type1 == int) orelse (Type1 == char)) 
-      andalso 
-     ((Type2 == int) orelse (Type2 == char)))
-    orelse
-     Type1 == Type2.
 
 type_check([], State) ->
     State;
@@ -140,12 +141,21 @@ type_check([#'EXTFUNC'{name = Name, return_type = ReturnType, formals = Formals}
 		    _ ->
 			lists:map(
 			  fun(X) -> 
-				  (type_check(X, State))#state.type 
+				  A = (type_check(X, State)),
+				  io:format("DIRTY ARRAY: ~p~n", [A#state.kind]),
+				  case A#state.kind of 
+				      dirty_array ->
+					  {array, A#state.type};
+				      _ ->
+					  A#state.type
+				  end
 			  end, 
 			  Formals)
 		end,
 	    RetType = (type_check(ReturnType, State))#state.type,
-	    
+
+	    io:format("FUNCTION ~p with arguments: ~p~n", [get_name(Name), ArgTypes]),
+
             NewState = insert_symbol(get_name(Name), func, {ArgTypes, RetType}, extern, State),
             type_check(Tl, NewState);
         _ ->
@@ -170,15 +180,21 @@ type_check([#'FUNCTION'{name = Name, formals = Formals, return_type = ReturnType
 	    _ ->
 		lists:map(
 		  fun(X) ->
-			  (type_check(X, State#state{depth = Depth +1}))#state.type
+			  ArgState = (type_check(X, State#state{depth = Depth +1})),
+			  case ArgState#state.kind of
+			      dirty_array ->
+				  {array, ArgState#state.type};
+			      _Kind ->
+				  ArgState#state.type
+			  end
 		  end,
 		  Formals
 		 )
 	end,
-
+    io:format("FUNCTION ~p with arguments: ~p~n", [get_name(Name), ArgTypes]),
     %% Check the return type
     RetType = (type_check(ReturnType, State))#state.type,
-    
+
     %% Insert function in the table as (name = Name, type = func, spec = {ArgumentTypes, ReturnType})
     NewState = insert_symbol(get_name(Name), func, {ArgTypes, RetType}, State),
     
@@ -189,22 +205,17 @@ type_check([#'FUNCTION'{name = Name, formals = Formals, return_type = ReturnType
     
     type_check(Tl, NewState);
 
-%%% OBS! Declarator kan vara ARRDEC också
 type_check([#'VARDEC'{base_type = BaseType, declarator = Declarator}|Tl], State) ->
     %% Get the type
     Type = type_check(BaseType, State),
 
-    Kind = 
-	case Declarator of
-	    {ident, _TokenLine, _TokenLen, _Name} ->
-		var;
-	    _ ->
-		array
-	end,
-    
-    %% Inserts the symbol
-    NewST = insert_symbol(get_name(Declarator), Kind, Type#state.type, Type),
-   
+    NewST = 
+    case Declarator of
+	{ident, _TokenLine, _TokenLen, _Name} ->
+	    insert_symbol(get_name(Declarator), var, Type#state.type, Type);
+	_ ->
+	    type_check(Declarator, State#state{type = Type#state.type})
+    end,
     %% Make a recursive call on the tail
     type_check(Tl, NewST);
 
@@ -223,7 +234,7 @@ type_check([#'ARRDEC'{identifier = Identifier, base_type = BaseType, size = Size
     %% Inserts the symbol
     NewState = insert_symbol(Name, array, Type, Size, State),
 
-    type_check(Tl, NewState);
+    type_check(Tl, NewState#state{kind = dirty_array});
 
 type_check([#'WHILE'{expression = Expression, statement = Statement}|Tl], State) ->
     NewState = type_check(Expression, State),
@@ -258,7 +269,7 @@ type_check([#'BINARY_OP'{operation = _Operation, expression1 = Expr1, expression
     TExpr1 = type_check(Expr1, State),
     TExpr2 = type_check(Expr2, TExpr1),
     
-    case  legal_types(TExpr1, TExpr2) of
+    case  compatible_types(TExpr1#state.type, TExpr2#state.type) of
 	true ->
 	    case TExpr2#state.kind == dirty_array orelse TExpr1#state.kind == dirty_array of
 		true ->
@@ -274,7 +285,7 @@ type_check([#'ASSIGN'{expr1 = Expr1, expr2 = Expr2}|Tl], State) ->
     Expr1State = type_check(Expr1, State),
     Expr2State = type_check(Expr2, Expr1State),
     
-    case legal_types(Expr1State, Expr2State) of
+    case compatible_types(Expr1State#state.type, Expr2State#state.type) of
 	true ->
 	    case Expr1State#state.kind == dirty_array orelse Expr2State#state.kind == dirty_array of
 		true ->
@@ -284,7 +295,7 @@ type_check([#'ASSIGN'{expr1 = Expr1, expr2 = Expr2}|Tl], State) ->
 			var ->
 			    type_check(Tl, Expr2State);
 			array ->
-			    type_check(Tl, Expr2State);
+			    (type_check(Tl, Expr2State))#state{kind = array};
 			_ ->
 			    error(no_assignment, "Can not assign non-variables", [])
 		    end
@@ -320,8 +331,14 @@ type_check([#'FUNCTION_CALL'{identifier = Identifier, argument_list = ArgumentLi
 	    _ ->
 		lists:map(
 		  fun(X) ->
-			  (type_check(X, State))#state.type
-		  end, 
+			  ArgState = (type_check(X, State#state{kind = undefined})),
+			  case ArgState#state.kind of
+			      dirty_array ->
+				  {array, ArgState#state.type};
+			      _Kind ->
+				  ArgState#state.type
+			  end
+		  end,
 		  ArgumentList)
 	end,
 
@@ -331,15 +348,15 @@ type_check([#'FUNCTION_CALL'{identifier = Identifier, argument_list = ArgumentLi
 
 type_check([#'RETURN'{expression = Expression}|Tl], State = #state{current_function = CFunc}) ->
 
-    #state{type = ReturnType} = type_check(Expression, State),
+    ExprState = #state{type = ReturnType, kind = Kind} = type_check(Expression, State),
 
     {ok, FReturnType, _} = lookup_symbol(CFunc, func, State),
 
-    case valid_return(ReturnType, FReturnType#function_type.return_type) of
+    case valid_return(ExprState, FReturnType#function_type.return_type) of
 	true ->
 	    type_check(Tl, State);
 	_ ->
-	    error(return_missmatch, "The function ~p is declared as ~p but returns ~p", [CFunc, FReturnType#function_type.return_type, ReturnType])
+	    error(return_mismatch, "The function ~p is declared as ~p but returns ~p ~p", [CFunc, FReturnType#function_type.return_type, Kind, ReturnType])
     end;
 
 %% The next four functions is used to match out the innermost values
@@ -351,13 +368,13 @@ type_check([{ident, _TokenLine, _TokenLen, Name}], State) ->
 	    State#state{kind = Kind, type = Type}
     end;
 type_check([{int_constant, _TokenLine, _Value}], State) ->
-    State#state{type = int};
+    State#state{type = int, kind=const};
 type_check([{char, _TokenLine}], State) ->
-    State#state{type = char};
+    State#state{type = char, kind=const};
 type_check([{int, _TokenLine}], State) ->
-    State#state{type = int};
+    State#state{type = int, kind=const};
 type_check([{void, _TokenLine}], State) ->
-    State#state{type = void};
+    State#state{type = void, kind=const};
 type_check([nil|Tl], State) ->
     type_check(Tl, State);
 
@@ -376,10 +393,35 @@ error(Reason, Message, Parameters) ->
     ?PRINT_ERROR(Message, Parameters),
     error({error, Reason, Parameters}).
 
-	    
-valid_return(Type, Type) ->
+
+valid_return(#state{type = Type, kind = dirty_array}, {array, Type}) ->
     true;
-valid_return('char', 'int') ->
+valid_return(#state{type = Type, kind = Kind}, Type) when Kind /= dirty_array ->
+    true;
+valid_return(#state{type = 'char', kind = Kind}, 'int') when Kind /= dirty_array ->
+    true;
+valid_return(#state{type = 'int', kind = Kind}, 'char') when Kind /= dirty_array ->
     true;
 valid_return(_, _) ->
     false.
+
+
+compatible_types(A, B) when not is_list(A) ->
+    compatible_types([A], B);
+compatible_types(A, B) when not is_list(B) ->
+    compatible_types(A, [B]);
+compatible_types([], []) ->
+    true;
+compatible_types([], _) ->
+    false;
+compatible_types(_, []) ->
+    false;
+compatible_types([Type|Tl1], [Type|Tl2]) ->
+    compatible_types(Tl1, Tl2);
+compatible_types(['char'|Tl1], ['int'|Tl2]) ->
+    compatible_types(Tl1, Tl2);
+compatible_types(['int'|Tl1], ['char'|Tl2]) ->
+    compatible_types(Tl1, Tl2);
+compatible_types(_, _) ->
+    false.
+
