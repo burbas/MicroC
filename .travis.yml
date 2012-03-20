@@ -1,0 +1,9 @@
+language: erlang
+otp_release:
+   - R15B
+   - R14B04
+   - R14B03
+   - R14B02
+script: "rebar ct"
+notifications:
+	- niclas@burbas.se
