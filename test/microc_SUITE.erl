@@ -99,7 +99,7 @@ end_per_testcase(_TestCase, _Config) ->
 groups() ->
     [{incorrect, [parallel], [{semantic, [], [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
 				      ise13,ise14,ise15,ise16,ise17,ise18,ise19,ise20,ise21,ise22,ise23,ise24,
-				      ise25,ise26,ise27,ise28,ise29,ise30,ise31,ise32,ise33,ise34]},
+				      ise25,ise26,ise27,ise28,ise29,ise30,ise31,ise32,ise33,ise34, ise35]},
 		      {lexer, [], [ile01, ile02, ile03, ile04]},
 		      {parser, [], [ipe01, ipe02, ipe03, ipe04, ipe05, ipe06, ipe07, ipe08, ipe09, 
 				    ipe10, ipe11, ipe12, ipe13, ipe14]}
@@ -167,19 +167,19 @@ ise06(_Config) ->
     {error, already_declared, [a]} = mrh:helper(?CTPATH,"incorrect/semantic/se06.c").
 
 ise07(_Config) ->
-    {error, return_missmatch, [a, void, int]} = mrh:helper(?CTPATH,"incorrect/semantic/se07.c").
+    {error, return_mismatch, [a, void, var, int]} = mrh:helper(?CTPATH,"incorrect/semantic/se07.c").
 
 ise08(_Config) ->
-    {error, return_missmatch, [a, int, void]} = mrh:helper(?CTPATH,"incorrect/semantic/se08.c").
+    {error, return_mismatch, [a, int, const, void]} = mrh:helper(?CTPATH,"incorrect/semantic/se08.c").
     
 ise09(_Config) ->
-    {error, return_missmatch, [a, int, char]} = mrh:helper(?CTPATH,"incorrect/semantic/se09.c").
+    {error, return_mismatch, [a, int, dirty_array, char]} = mrh:helper(?CTPATH,"incorrect/semantic/se09.c").
    
 ise10(_Config) ->
     {error, not_found, [n]} = mrh:helper(?CTPATH,"incorrect/semantic/se10.c").
     
 ise11(_Config) ->
-    {error, incompatible_types, _} = mrh:helper(?CTPATH,"incorrect/semantic/se11.c").
+    {error,incompatible_types,[{function_type,[void],int},int]} = mrh:helper(?CTPATH,"incorrect/semantic/se11.c").
     
 ise12(_Config) ->
     {error, not_found, [a]} = mrh:helper(?CTPATH,"incorrect/semantic/se12.c").
@@ -191,10 +191,10 @@ ise14(_Config) ->
     {error, not_found, [f]} = mrh:helper(?CTPATH,"incorrect/semantic/se14.c").
    
 ise15(_Config) ->
-    {error, type_mismatch, []} = mrh:helper(?CTPATH,"incorrect/semantic/se15.c").
+    {error, type_mismatch, [[int,int,int],[int,int]]} = mrh:helper(?CTPATH,"incorrect/semantic/se15.c").
     
 ise16(_Config) ->
-    {error, type_mismatch, []} = mrh:helper(?CTPATH,"incorrect/semantic/se16.c").
+    {error, type_mismatch, [[int,int],[int,int,int]]} = mrh:helper(?CTPATH,"incorrect/semantic/se16.c").
    
 ise17(_Config) ->
     {error, illegal_pointer, []} = mrh:helper(?CTPATH,"incorrect/semantic/se17.c").
@@ -209,7 +209,7 @@ ise20(_Config) ->
     {error,illegal_pointer, []} = mrh:helper(?CTPATH,"incorrect/semantic/se20.c").
     
 ise21(_Config) ->
-    {error,return_missmatch, [a, int, char]} = mrh:helper(?CTPATH,"incorrect/semantic/se21.c").
+    {error,return_mismatch, [a, int, dirty_array, char]} = mrh:helper(?CTPATH,"incorrect/semantic/se21.c").
     
 ise22(_Config) ->
     {error,illegal_pointer, []} = mrh:helper(?CTPATH,"incorrect/semantic/se22.c").
@@ -224,13 +224,13 @@ ise25(_Config) ->
     {error, no_assignment, []} = mrh:helper(?CTPATH,"incorrect/semantic/se25.c").
     
 ise26(_Config) ->
-    {error,type_mismatch, []} = mrh:helper(?CTPATH,"incorrect/semantic/se26.c").
+    {error,type_mismatch, [[{array, int}], [{array, char}]]} = mrh:helper(?CTPATH,"incorrect/semantic/se26.c").
     
 ise27(_Config) ->
-    {error,return_missmatch, [a, void, int]} = mrh:helper(?CTPATH,"incorrect/semantic/se27.c").
+    {error,return_mismatch, [a, void, var, int]} = mrh:helper(?CTPATH,"incorrect/semantic/se27.c").
     
 ise28(_Config) ->
-    {error,return_missmatch, [a, void, int]} = mrh:helper(?CTPATH,"incorrect/semantic/se28.c").
+    {error,return_mismatch, [a, void, var, int]} = mrh:helper(?CTPATH,"incorrect/semantic/se28.c").
     
 ise29(_Config) ->
     {error,already_declared, [n]} = mrh:helper(?CTPATH,"incorrect/semantic/se29.c").
@@ -245,11 +245,15 @@ ise32(_Config) ->
     {error,unmatched_types, [main, int, void]} = mrh:helper(?CTPATH,"incorrect/semantic/se32.c").
     
 ise33(_Config) ->
-    {error,type_mismatch, []} = mrh:helper(?CTPATH,"incorrect/semantic/se33.c").
+    {error,type_mismatch, [[int,int,int],[int,int]]} = mrh:helper(?CTPATH,"incorrect/semantic/se33.c").
     
 ise34(_Config) ->
-    {error,type_mismatch, []} = mrh:helper(?CTPATH,"incorrect/semantic/se34.c").
-    
+    {error,type_mismatch, [[int,int],[int,int,int]]} = mrh:helper(?CTPATH,"incorrect/semantic/se34.c").
+
+ise35(_Config) ->    
+    {error, return_mismatch, [g, char, dirty_array, char]} = mrh:helper(?CTPATH, "incorrect/semantic/se35.c").
+
+
 ile01(_Config) ->
     {error, _Info, _Row} = mrh:lexer_helper(?CTPATH, "incorrect/lexer/bad.c").
 
