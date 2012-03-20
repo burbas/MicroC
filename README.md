@@ -1,3 +1,5 @@
+[![Build Status](http://travis-ci.org/burbas/MicroC.png)](http://travis-ci.org/burbas/MicroC])
+
 Please note that this project is unstable, eg the APIs and internal logic can be changed.
 
 # Build
