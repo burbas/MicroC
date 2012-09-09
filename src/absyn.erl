@@ -43,6 +43,10 @@
 -define(PRINT_ERROR(T, Y), true).
 -endif.
 
+%%% KNOWN PROBLEMS
+%%%%%%%%%%%%%%%%%%
+% - When an array is returned, only the base type is concidered - not the array itself
+
 insert_symbol(Name, Kind, Type, State) ->
     insert_symbol(Name, Kind, Type, [], State).
 
@@ -84,7 +88,7 @@ lookup_symbol(Name, Kind, #state{symbol_table = ST}) ->
 lookup_symbol(Name, Kind, Arguments, #state{symbol_table = ST}) ->
     case dict:find(Name, ST) of
 	{ok, #symbol{kind = Kind, type = Type, attributes = Attributes}} ->
-	    ArgumentTypes = 
+	    ArgumentTypes =
 		lists:map(
 		  fun({ident, _TokenLine, _TokenLen, FName}) ->
 			  case dict:find(FName, ST) of
@@ -103,8 +107,6 @@ lookup_symbol(Name, Kind, Arguments, #state{symbol_table = ST}) ->
 		ArgumentTypes ->
 		    {ok, Type, Attributes};
 		A = #function_type{arguments = ArgTypes, return_type = ReturnType} ->
-		    io:format("FUNCTION NAME: ~p~n", [Name]),
-		    io:format("FUNCTION ~p~n", [A]),
 		    %% We need to check if the types are compatible (If we are dealing with array we need exact types)
 		    [ error(type_mismatch, "", [ArgTypes, ArgumentTypes]) || not compatible_types(ArgTypes, ArgumentTypes) ],
 		    {ok, ReturnType, Attributes};
@@ -134,27 +136,24 @@ type_check([P|Tl], State) when is_list(P) ->
 type_check([#'EXTFUNC'{name = Name, return_type = ReturnType, formals = Formals}|Tl], State) ->
     case State#state.depth of
         0 ->
-	    ArgTypes = 
+	    ArgTypes =
 		case Formals of
 		    nil ->
 			[void];
 		    _ ->
 			lists:map(
-			  fun(X) -> 
+			  fun(X) ->
 				  A = (type_check(X, State)),
-				  io:format("DIRTY ARRAY: ~p~n", [A#state.kind]),
-				  case A#state.kind of 
+				  case A#state.kind of
 				      dirty_array ->
 					  {array, A#state.type};
 				      _ ->
 					  A#state.type
 				  end
-			  end, 
+			  end,
 			  Formals)
 		end,
 	    RetType = (type_check(ReturnType, State))#state.type,
-
-	    io:format("FUNCTION ~p with arguments: ~p~n", [get_name(Name), ArgTypes]),
 
             NewState = insert_symbol(get_name(Name), func, {ArgTypes, RetType}, extern, State),
             type_check(Tl, NewState);
@@ -163,7 +162,7 @@ type_check([#'EXTFUNC'{name = Name, return_type = ReturnType, formals = Formals}
     end;
 
 type_check([#'GLOBAL'{declaration = Declarator}|Tl], State) ->
-    case State#state.depth of 
+    case State#state.depth of
         0 ->
 	    NewST = type_check(Declarator, State),
 	    type_check(Tl, NewST);
@@ -173,43 +172,46 @@ type_check([#'GLOBAL'{declaration = Declarator}|Tl], State) ->
 
 %% Function-type
 type_check([#'FUNCTION'{name = Name, formals = Formals, return_type = ReturnType, locals = Locals, body = Body}|Tl], State = #state{depth = Depth}) ->
+    io:format("Function:~nName: ~p~nFormals: ~p~nReturn Type: ~p~nLocals: ~p~nBody: ~p~n", [Name, Formals, ReturnType, Locals, Body]),
     ArgTypes =
-	case Formals of
-	    nil ->
-		[void];
-	    _ ->
-		lists:map(
-		  fun(X) ->
-			  ArgState = (type_check(X, State#state{depth = Depth +1})),
-			  case ArgState#state.kind of
-			      dirty_array ->
-				  {array, ArgState#state.type};
-			      _Kind ->
-				  ArgState#state.type
-			  end
-		  end,
-		  Formals
-		 )
-	end,
-    io:format("FUNCTION ~p with arguments: ~p~n", [get_name(Name), ArgTypes]),
+        case Formals of
+            nil ->
+                [void];
+            _ ->
+                lists:map(
+                  fun([[void]]) ->
+                          nil;
+                     (X) ->
+                          io:format("FORMAL: ~p~n", [X]),
+                          ArgState = (type_check(X, State#state{depth = Depth +1})),
+                          case ArgState#state.kind of
+                              dirty_array ->
+                                  {array, ArgState#state.type};
+                              _Kind ->
+                                  ArgState#state.type
+                          end
+                  end,
+                  Formals
+                 )
+        end,
     %% Check the return type
     RetType = (type_check(ReturnType, State))#state.type,
 
     %% Insert function in the table as (name = Name, type = func, spec = {ArgumentTypes, ReturnType})
     NewState = insert_symbol(get_name(Name), func, {ArgTypes, RetType}, State),
-    
-    
+
+
     NewState2 = type_check(Formals, NewState#state{depth = Depth + 1}),
     NewState3 = type_check(Locals, NewState2),
     type_check(Body, NewState3#state{current_function = get_name(Name)}),
-    
+
     type_check(Tl, NewState);
 
 type_check([#'VARDEC'{base_type = BaseType, declarator = Declarator}|Tl], State) ->
     %% Get the type
     Type = type_check(BaseType, State),
 
-    NewST = 
+    NewST =
     case Declarator of
 	{ident, _TokenLine, _TokenLen, _Name} ->
 	    insert_symbol(get_name(Declarator), var, Type#state.type, Type);
@@ -227,7 +229,7 @@ type_check([#'ARRDEC'{identifier = Identifier, base_type = BaseType, size = Size
 	       _ ->
 		   (type_check(BaseType, State))#state.type
 	   end,
-    
+
     %% Get the name
     Name = get_name(Identifier),
 
@@ -268,7 +270,7 @@ type_check([#'UNARY'{operation = _Operation, expression = Expression}|Tl], State
 type_check([#'BINARY_OP'{operation = _Operation, expression1 = Expr1, expression2 = Expr2}|Tl], State) ->
     TExpr1 = type_check(Expr1, State),
     TExpr2 = type_check(Expr2, TExpr1),
-    
+
     case  compatible_types(TExpr1#state.type, TExpr2#state.type) of
 	true ->
 	    case TExpr2#state.kind == dirty_array orelse TExpr1#state.kind == dirty_array of
@@ -284,7 +286,7 @@ type_check([#'BINARY_OP'{operation = _Operation, expression1 = Expr1, expression
 type_check([#'ASSIGN'{expr1 = Expr1, expr2 = Expr2}|Tl], State) ->
     Expr1State = type_check(Expr1, State),
     Expr2State = type_check(Expr2, Expr1State),
-    
+
     case compatible_types(Expr1State#state.type, Expr2State#state.type) of
 	true ->
 	    case Expr1State#state.kind == dirty_array orelse Expr2State#state.kind == dirty_array of
@@ -301,7 +303,7 @@ type_check([#'ASSIGN'{expr1 = Expr1, expr2 = Expr2}|Tl], State) ->
 		    end
 	    end;
 	_ ->
-	    error(incompatible_types, "Can not assign ~p a value of ~p", 
+	    error(incompatible_types, "Can not assign ~p a value of ~p",
 		  [Expr1State#state.type, Expr2State#state.type])
     end;
 
@@ -323,8 +325,8 @@ type_check([#'EFFECT'{value = Value}|Tl], State) ->
 
 type_check([#'FUNCTION_CALL'{identifier = Identifier, argument_list = ArgumentList}|Tl], State) ->
     IdentName = get_name(Identifier),
-    
-    ArgumentTypes = 
+
+    ArgumentTypes =
 	case ArgumentList of
 	    nil ->
 		[void];

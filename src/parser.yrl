@@ -17,7 +17,7 @@ Nonassoc 900 'ident'.
 
 expression ->
     'ident' : '$1'.
-expression -> 
+expression ->
     'int_constant' : '$1'.
 expression ->
     '(' expression ')' : '$2'.
@@ -45,7 +45,7 @@ expression_list ->
 expression_list ->
     expression_list 'comma' expression : '$1'++['$3'].
 
- 
+
 binary_operator ->
     'lt' : 'lt'.
 binary_operator ->
@@ -68,19 +68,19 @@ binary_operator ->
     'div' : 'div'.
 
 
-statement ->				 
+statement ->
     simple_compound_statement : '$1'.
 statement ->
     expression 'semi' : effect('$1').
 statement ->
     'semi' : statement(nil).
 statement ->
-    'if' '(' expression ')' statement : if_expr('$3', '$5', nil, line('$1')). 
+    'if' '(' expression ')' statement : if_expr('$3', '$5', nil, line('$1')).
 statement ->
     'if' '(' expression ')' statement 'else' statement : if_expr('$3', '$5', '$7', line('$1')).
 statement ->
     'while' '(' expression ')' statement : while('$3', '$5', line('$1')).
-statement ->			
+statement ->
     'return' expression 'semi' : return('$2', line('$1')).
 statement ->
     'return' 'semi' : return({void, 0}, line('$1')).
@@ -89,7 +89,7 @@ simple_compound_statement ->
     '{' statement_list '}' : '$2'.
 
 statement_list ->
-    '$empty' : [void].
+    '$empty' : [{void, 0}].
 statement_list ->
     statement : ['$1'].
 statement_list ->
@@ -121,13 +121,13 @@ declarator ->
     'ident' '[' 'int_constant' ']' : arrdec(nil, '$1', '$3', line('$1')).
 declarator ->
     'ident' '[' ']' : arrdec(nil, '$1', nil, line('$1')).
-    
+
 
 
 program ->
     toplevel_declaration_list : program('$1', dummy).
 
-toplevel_declaration_list ->    
+toplevel_declaration_list ->
     toplevel_declaration : ['$1'].
 toplevel_declaration_list ->
     toplevel_declaration_list toplevel_declaration : '$1'++['$2'].
@@ -193,7 +193,7 @@ function(Name, Formals, ReturnType, Body, Locals, Line) ->
 	  body = Body,
 	  line = Line
 	 }.
-	  
+
 
 program(Decs, Source) ->
     #'PROGRAM'{
@@ -284,7 +284,7 @@ function_call(Ident, FunctionList, Line) ->
 		},
 	       line = Line
 	      }.
-		   
+
 array(Ident, Expression, Line) ->
     #'EXPRESSION'{
        value = #'ARRAY'{
