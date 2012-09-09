@@ -97,21 +97,26 @@ end_per_testcase(_TestCase, _Config) ->
 %% @end
 %%--------------------------------------------------------------------
 groups() ->
-    [{incorrect, [parallel], [{semantic, [], [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
-				      ise13,ise14,ise15,ise16,ise17,ise18,ise19,ise20,ise21,ise22,ise23,ise24,
-				      ise25,ise26,ise27,ise28,ise29,ise30,ise31,ise32,ise33,ise34, ise35]},
-		      {lexer, [], [ile01, ile02, ile03, ile04]},
-		      {parser, [], [ipe01, ipe02, ipe03, ipe04, ipe05, ipe06, ipe07, ipe08, ipe09, 
-				    ipe10, ipe11, ipe12, ipe13, ipe14]}
+    [{incorrect, [parallel], [
+                              {semantic, [], [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
+                                              ise13,ise14,ise15,ise16,ise17,ise18,ise19,ise20,ise21,ise22,ise23,ise24,
+                                              ise25,ise26,ise27,ise28,ise29,ise30,ise31,ise32,ise33,ise34, ise35]},
+                              {lexer, [], [ile01, ile02, ile03, ile04]},
+                              {parser, [], [ipe01, ipe02, ipe03, ipe04, ipe05, ipe06, ipe07, ipe08, ipe09,
+                                            ipe10, ipe11, ipe12, ipe13, ipe14]}
 			     ]
      },
-     {correct, [], [{semantic, [], [se_noicy_adv01, se_noicy_adv02, se_noicy_adv03, se_noicy_adv04, se_noicy_med01, 
-				    se_noicy_med02, se_noicy_med03, se_noicy_med04, se_noicy_sim01, se_noicy_sim02, 
-				    se_noicy_sim03, se_noicy_sim04, se_noicy_sim05, se_noicy_sim06, se_noicy_sim07, 
-				    se_noicy_sim08, se_noicy_sim09, se_noicy_sim10, se_noicy_sim11, se_quiet01,
-				    se_quiet02, se_quiet03, se_quiet04, se_quiet05, se_quiet06]},
-		    {lexer, [], []},
-		    {parser, [], []}]}
+
+     %% If we test semantic correctness we also test the underlying layers (lexer, parser) so no need to explicitly test these
+     {correct, [], [
+                    {rtl, [], [rt_noicy_adv02, rt_noicy_sim01]},
+                    {semantic, [], [se_noicy_adv01, se_noicy_adv02, se_noicy_adv03, se_noicy_adv04, se_noicy_med01,
+                                    se_noicy_med02, se_noicy_med03, se_noicy_med04, se_noicy_sim01, se_noicy_sim02,
+                                    se_noicy_sim03, se_noicy_sim04, se_noicy_sim05, se_noicy_sim06, se_noicy_sim07,
+                                    se_noicy_sim08, se_noicy_sim09, se_noicy_sim10, se_noicy_sim11, se_quiet01,
+                                    se_quiet02, se_quiet03, se_quiet04, se_quiet05, se_quiet06]},
+                    {lexer, [], []},
+                    {parser, [], []}]}
     ].
 
 %%--------------------------------------------------------------------
@@ -122,7 +127,7 @@ groups() ->
 %% Reason = term()
 %% @end
 %%--------------------------------------------------------------------
-all() -> 
+all() ->
     [{group, incorrect}, {group, correct}].
     %% [ise01,ise02,ise03,ise04,ise05,ise06,ise07,ise08,ise09,ise10,ise11,ise12,
     %%  ise13,ise14,ise15,ise16,ise17,ise18,ise19,ise20,ise21,ise22,ise23,ise24,
@@ -136,7 +141,7 @@ all() ->
 %% Info = [tuple()]
 %% @end
 %%--------------------------------------------------------------------
-my_test_case() -> 
+my_test_case() ->
     [].
 
 %%--------------------------------------------------------------------
@@ -156,13 +161,13 @@ ise02(_Config) ->
 
 ise03(_Config) ->
     {error, not_found, [output]} = mrh:helper(?CTPATH,"incorrect/semantic/se03.c").
- 
+
 ise04(_Config) ->
     {error, already_declared, [a]} = mrh:helper(?CTPATH,"incorrect/semantic/se04.c").
 
 ise05(_Config) ->
     {error, already_declared, [a]} = mrh:helper(?CTPATH,"incorrect/semantic/se05.c").
-   
+
 ise06(_Config) ->
     {error, already_declared, [a]} = mrh:helper(?CTPATH,"incorrect/semantic/se06.c").
 
@@ -171,86 +176,86 @@ ise07(_Config) ->
 
 ise08(_Config) ->
     {error, return_mismatch, [a, int, const, void]} = mrh:helper(?CTPATH,"incorrect/semantic/se08.c").
-    
+
 ise09(_Config) ->
     {error, return_mismatch, [a, int, dirty_array, char]} = mrh:helper(?CTPATH,"incorrect/semantic/se09.c").
-   
+
 ise10(_Config) ->
     {error, not_found, [n]} = mrh:helper(?CTPATH,"incorrect/semantic/se10.c").
-    
+
 ise11(_Config) ->
     {error,incompatible_types,[{function_type,[void],int},int]} = mrh:helper(?CTPATH,"incorrect/semantic/se11.c").
-    
+
 ise12(_Config) ->
     {error, not_found, [a]} = mrh:helper(?CTPATH,"incorrect/semantic/se12.c").
-    
+
 ise13(_Config) ->
     {error, unmatched_types, [main, int, void]} = mrh:helper(?CTPATH,"incorrect/semantic/se13.c").
-   
+
 ise14(_Config) ->
     {error, not_found, [f]} = mrh:helper(?CTPATH,"incorrect/semantic/se14.c").
-   
+
 ise15(_Config) ->
     {error, type_mismatch, [[int,int,int],[int,int]]} = mrh:helper(?CTPATH,"incorrect/semantic/se15.c").
-    
+
 ise16(_Config) ->
     {error, type_mismatch, [[int,int],[int,int,int]]} = mrh:helper(?CTPATH,"incorrect/semantic/se16.c").
-   
+
 ise17(_Config) ->
     {error, illegal_pointer, []} = mrh:helper(?CTPATH,"incorrect/semantic/se17.c").
-    
+
 ise18(_Config) ->
     {error, illegal_pointer, []} = mrh:helper(?CTPATH,"incorrect/semantic/se18.c").
-    
+
 ise19(_Config) ->
     {error, illegal_pointer, []} = mrh:helper(?CTPATH,"incorrect/semantic/se19.c").
-    
+
 ise20(_Config) ->
     {error,illegal_pointer, []} = mrh:helper(?CTPATH,"incorrect/semantic/se20.c").
-    
+
 ise21(_Config) ->
     {error,return_mismatch, [a, int, dirty_array, char]} = mrh:helper(?CTPATH,"incorrect/semantic/se21.c").
-    
+
 ise22(_Config) ->
     {error,illegal_pointer, []} = mrh:helper(?CTPATH,"incorrect/semantic/se22.c").
-   
+
 ise23(_Config) ->
     {error, not_found, [b]} = mrh:helper(?CTPATH,"incorrect/semantic/se23.c").
-   
+
 ise24(_Config) ->
     {error,illegal_pointer, []} = mrh:helper(?CTPATH,"incorrect/semantic/se24.c").
-   
+
 ise25(_Config) ->
     {error, no_assignment, []} = mrh:helper(?CTPATH,"incorrect/semantic/se25.c").
-    
+
 ise26(_Config) ->
     {error,type_mismatch, [[{array, int}], [{array, char}]]} = mrh:helper(?CTPATH,"incorrect/semantic/se26.c").
-    
+
 ise27(_Config) ->
     {error,return_mismatch, [a, void, var, int]} = mrh:helper(?CTPATH,"incorrect/semantic/se27.c").
-    
+
 ise28(_Config) ->
     {error,return_mismatch, [a, void, var, int]} = mrh:helper(?CTPATH,"incorrect/semantic/se28.c").
-    
+
 ise29(_Config) ->
     {error,already_declared, [n]} = mrh:helper(?CTPATH,"incorrect/semantic/se29.c").
-    
+
 ise30(_Config) ->
     {error,illegal_pointer, []} = mrh:helper(?CTPATH,"incorrect/semantic/se30.c").
-    
+
 ise31(_Config) ->
     {error,already_declared, [a]} = mrh:helper(?CTPATH,"incorrect/semantic/se31.c").
-    
+
 ise32(_Config) ->
     {error,unmatched_types, [main, int, void]} = mrh:helper(?CTPATH,"incorrect/semantic/se32.c").
-    
+
 ise33(_Config) ->
     {error,type_mismatch, [[int,int,int],[int,int]]} = mrh:helper(?CTPATH,"incorrect/semantic/se33.c").
-    
+
 ise34(_Config) ->
     {error,type_mismatch, [[int,int],[int,int,int]]} = mrh:helper(?CTPATH,"incorrect/semantic/se34.c").
 
-ise35(_Config) ->    
+ise35(_Config) ->
     {error, return_mismatch, [g, char, dirty_array, char]} = mrh:helper(?CTPATH, "incorrect/semantic/se35.c").
 
 
@@ -311,6 +316,90 @@ ipe14(_Config) ->
 
 
 %%%%% CORRECT CASES %%%%%%%%
+
+%% RTL %%
+rt_noicy_adv01(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/advanced/8queens.c").
+
+rt_noicy_adv02(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/advanced/bubble.c").
+
+rt_noicy_adv03(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/advanced/eval.c").
+
+rt_noicy_adv04(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/advanced/primes.c").
+
+rt_noicy_adv05(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/advanced/quick.c").
+
+rt_noicy_med01(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/medium/circle.c").
+
+rt_noicy_med02(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/medium/fac-b.c").
+
+rt_noicy_med03(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/medium/fac.c").
+
+rt_noicy_med04(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/medium/fib.c").
+
+
+rt_noicy_sim01(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/simple/sim01.c").
+
+rt_noicy_sim02(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/simple/sim02.c").
+
+rt_noicy_sim03(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/simple/sim03.c").
+
+rt_noicy_sim04(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/simple/sim04.c").
+
+rt_noicy_sim05(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/simple/sim05.c").
+
+rt_noicy_sim06(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/simple/sim06.c").
+
+rt_noicy_sim07(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/simple/sim07.c").
+
+rt_noicy_sim08(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/simple/sim08.c").
+
+rt_noicy_sim09(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/simple/sim09.c").
+
+rt_noicy_sim10(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/simple/sim10.c").
+
+rt_noicy_sim11(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "noisy/simple/sim11.c").
+
+
+rt_quiet01(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "quiet/semantic/s01.c").
+
+rt_quiet02(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "quiet/semantic/s02.c").
+
+rt_quiet03(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "quiet/semantic/s03.c").
+
+rt_quiet04(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "quiet/semantic/s04.c").
+
+rt_quiet05(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "quiet/semantic/s05.c").
+
+rt_quiet06(_Config) ->
+    {ok, _} = mrh:rtl_helper(?CTPATH, "quiet/semantic/s06.c").
+
+
+%% SEMANTIC %%
 se_noicy_adv01(_Config) ->
     {ok, _} = mrh:helper(?CTPATH, "noisy/advanced/8queens.c").
 
